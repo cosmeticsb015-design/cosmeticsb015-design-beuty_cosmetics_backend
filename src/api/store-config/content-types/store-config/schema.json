@@ -1,0 +1,21 @@
+{
+  "kind": "singleType",
+  "collectionName": "store_configs",
+  "info": {
+    "singularName": "store-config",
+    "pluralName": "store-configs",
+    "displayName": "Store Config"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "whatsapp_number": {
+      "type": "string"
+    },
+    "notification_email": {
+      "type": "email"
+    }
+  }
+}
