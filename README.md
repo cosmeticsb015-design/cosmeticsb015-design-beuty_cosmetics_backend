@@ -148,3 +148,14 @@ After changing these variables, restart Strapi and create a new Wompi payment li
 If an old Wompi link already redirects to the Strapi host at `/checkout/gracias-por-su-compra`, Strapi also exposes that path as a compatibility alias for the signed Wompi redirect. It validates the Wompi hash and then forwards to the configured storefront return URL. For new links, prefer the storefront tunnel in `WOMPI_REDIRECT_URL`.
 
 If a Wompi link was already generated with the root Strapi URL `/checkout/gracias-por-su-compra` instead of an `/api/*` route, Strapi registers a root compatibility redirect for that path during bootstrap. It forwards the full Wompi query string to `WOMPI_RETURN_URL` or to `WOMPI_STOREFRONT_URL + WOMPI_THANK_YOU_PATH`. This is only a QA safety net; the correct fix is still to generate a new link with the storefront `WOMPI_REDIRECT_URL`.
+
+### Cloudflare frontend origins and CORS
+
+The backend CORS middleware reads `CORS_ORIGINS`, `FRONTEND_URL`, `NEXT_PUBLIC_SITE_URL`, `WOMPI_REDIRECT_URL`, `WOMPI_RETURN_URL`, and `WOMPI_STOREFRONT_URL` and allows those origins automatically. For a Cloudflare QA frontend tunnel, configure the backend like this:
+
+```env
+FRONTEND_URL=https://wow-political-automobile-webcast.trycloudflare.com
+CORS_ORIGINS=http://localhost:3000,https://wow-political-automobile-webcast.trycloudflare.com
+```
+
+Next.js HMR websocket errors such as `/_next/webpack-hmr` are controlled by the frontend dev server, not Strapi. In the frontend repo, add the current `trycloudflare.com` host to `allowedDevOrigins` in `next.config.js` for local development.
