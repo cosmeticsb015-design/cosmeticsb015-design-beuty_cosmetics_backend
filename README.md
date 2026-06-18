@@ -113,12 +113,15 @@ Configure the backend Wompi variables like this:
 WOMPI_WEBHOOK_QA_OVERRIDE=false
 WOMPI_URL_AUTH=https://id.wompi.sv/connect/token
 WOMPI_URL_API=https://api.wompi.sv
-WOMPI_REDIRECT_URL=https://compete-number-expand-kinda.trycloudflare.com/api/wompi/redirect
-WOMPI_WEBHOOK_URL=https://compete-number-expand-kinda.trycloudflare.com/api/wompi/webhook
+# Customer redirect after finishing payment in Wompi (storefront tunnel)
+WOMPI_REDIRECT_URL=https://crops-sherman-output-relocation.trycloudflare.com/api/payments/wompi/close
 WOMPI_RETURN_URL=https://crops-sherman-output-relocation.trycloudflare.com/gracias-por-su-compra
+
+# Server-to-server payment confirmation (Strapi tunnel)
+WOMPI_WEBHOOK_URL=https://compete-number-expand-kinda.trycloudflare.com/api/wompi/webhook
 # Alternatively, you can use:
 # WOMPI_STOREFRONT_URL=https://crops-sherman-output-relocation.trycloudflare.com
 # WOMPI_THANK_YOU_PATH=/gracias-por-su-compra
 ```
 
-With this setup, Wompi calls Strapi for the signed redirect and webhook. Strapi updates the order from the webhook, validates the redirect hash, and forwards the shopper to the storefront thank-you page configured in `WOMPI_RETURN_URL` or derived from `WOMPI_STOREFRONT_URL` plus `WOMPI_THANK_YOU_PATH`.
+With this setup, Wompi sends the shopper back to the storefront redirect URL after finishing payment, while payment confirmation is handled by the Strapi webhook. Use the Strapi redirect endpoint only when you intentionally want Strapi to validate the redirect hash and then forward the shopper to `WOMPI_RETURN_URL`.

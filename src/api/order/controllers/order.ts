@@ -111,6 +111,23 @@ const getWompiNotificationEmails = (order: any) =>
 const getWompiErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Wompi payment link failed';
 
+const getConfiguredWompiReturnUrl = () => {
+  const returnUrl = (process.env.WOMPI_RETURN_URL || '').trim();
+  if (returnUrl) return returnUrl;
+
+  const storefrontUrl = (process.env.WOMPI_STOREFRONT_URL || '').trim();
+  if (!storefrontUrl) return '';
+
+  const thankYouPath = process.env.WOMPI_THANK_YOU_PATH || '/gracias-por-su-compra';
+  try {
+    return new URL(thankYouPath, storefrontUrl).toString();
+  } catch {
+    return '';
+  }
+};
+
+const getWompiCustomerRedirectUrl = () => getConfiguredWompiReturnUrl() || requiredEnv('WOMPI_REDIRECT_URL');
+
 const buildWompiPaymentLinkPayload = (order: any) => {
   const commerceId = `ORDER-${order.tracking_number}`;
   const total = getOrderTotal(order);
@@ -124,8 +141,8 @@ const buildWompiPaymentLinkPayload = (order: any) => {
     monto: Number(total.toFixed(2)),
     nombreProducto: `Orden ${order.tracking_number}`,
     configuracion: {
-      urlRedirect: requiredEnv('WOMPI_REDIRECT_URL'),
-      urlRetorno: process.env.WOMPI_RETURN_URL || requiredEnv('WOMPI_REDIRECT_URL'),
+      urlRedirect: getWompiCustomerRedirectUrl(),
+      urlRetorno: getWompiCustomerRedirectUrl(),
       urlWebhook: getWompiWebhookUrl(),
       emailsNotificacion: getWompiNotificationEmails(order),
       notificarTransaccionCliente: true,
@@ -168,21 +185,6 @@ const attachWompiPaymentLink = async (strapi: any, order: any) => {
   };
 };
 
-
-const getConfiguredWompiReturnUrl = () => {
-  const returnUrl = (process.env.WOMPI_RETURN_URL || '').trim();
-  if (returnUrl) return returnUrl;
-
-  const storefrontUrl = (process.env.WOMPI_STOREFRONT_URL || '').trim();
-  if (!storefrontUrl) return '';
-
-  const thankYouPath = process.env.WOMPI_THANK_YOU_PATH || '/gracias-por-su-compra';
-  try {
-    return new URL(thankYouPath, storefrontUrl).toString();
-  } catch {
-    return '';
-  }
-};
 
 const buildWompiReturnUrl = (order: any, query: Record<string, unknown>) => {
   const returnUrl = getConfiguredWompiReturnUrl();
