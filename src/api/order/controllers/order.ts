@@ -223,12 +223,29 @@ const attachWompiPaymentLink = async (strapi: any, order: any) => {
 };
 
 
+const appendQueryParam = (url: URL, key: string, value: unknown) => {
+  if (value === undefined || value === null) return;
+
+  if (Array.isArray(value)) {
+    value.forEach((entry) => appendQueryParam(url, key, entry));
+    return;
+  }
+
+  url.searchParams.set(key, String(value));
+};
+
 const buildWompiReturnUrl = (order: any, query: Record<string, unknown>) => {
   const returnUrl = getConfiguredWompiReturnUrl();
   if (!returnUrl) return undefined;
 
   try {
     const url = new URL(returnUrl);
+
+    // Keep Wompi's original signed query string so the storefront can validate
+    // the redirect with its /api/checkout/wompi/redirect helper instead of
+    // getting stuck waiting for order details without the hash/idEnlace/monto values.
+    Object.entries(query).forEach(([key, value]) => appendQueryParam(url, key, value));
+
     url.searchParams.set('order', order.documentId);
     url.searchParams.set('tracking_number', order.tracking_number);
     url.searchParams.set('payment_status', order.payment_status);
