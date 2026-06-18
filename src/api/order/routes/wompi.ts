@@ -2,6 +2,18 @@ export default {
   routes: [
     {
       method: 'POST',
+      path: '/wompi/checkout',
+      handler: 'order.create',
+      config: { auth: false },
+    },
+    {
+      method: 'POST',
+      path: '/payments/wompi/checkout',
+      handler: 'order.create',
+      config: { auth: false },
+    },
+    {
+      method: 'POST',
       path: '/orders/:id/wompi/payment-link',
       handler: 'order.createWompiPaymentLink',
       config: { auth: false },
