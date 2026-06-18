@@ -146,3 +146,5 @@ WOMPI_RETURN_URL=https://crops-sherman-output-relocation.trycloudflare.com/graci
 After changing these variables, restart Strapi and create a new Wompi payment link. Existing Wompi links keep the old webhook URL, so they will continue to call the wrong endpoint until a new link is generated.
 
 If an old Wompi link already redirects to the Strapi host at `/gracias-por-su-compra`, Strapi also exposes that path as a compatibility alias for the signed Wompi redirect. It validates the Wompi hash and then forwards to the configured storefront return URL. For new links, prefer the storefront tunnel in `WOMPI_REDIRECT_URL`.
+
+If a Wompi link was already generated with the root Strapi URL `/gracias-por-su-compra` instead of an `/api/*` route, Strapi registers a root compatibility redirect for that path during bootstrap. It forwards the full Wompi query string to `WOMPI_RETURN_URL` or to `WOMPI_STOREFRONT_URL + WOMPI_THANK_YOU_PATH`. This is only a QA safety net; the correct fix is still to generate a new link with the storefront `WOMPI_REDIRECT_URL`.
