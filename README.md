@@ -154,6 +154,17 @@ If an old Wompi link already redirects to the Strapi host at `/checkout/gracias-
 
 If a Wompi link was already generated with the root Strapi URL `/checkout/gracias-por-su-compra` instead of an `/api/*` route, Strapi registers a root compatibility redirect for that path during bootstrap. It forwards the full Wompi query string to `WOMPI_RETURN_URL` or to `WOMPI_STOREFRONT_URL + WOMPI_THANK_YOU_PATH`. This is only a QA safety net; the correct fix is still to generate a new link with the storefront `WOMPI_REDIRECT_URL`.
 
+
+### Public order link expiration
+
+The public order detail URL used by the storefront thank-you page is intentionally time-limited. By default, `/api/orders/public/:identifier` is available for 24 hours from the order expiration/creation window and then returns `410 Gone`. Override the duration with:
+
+```env
+PUBLIC_ORDER_ACCESS_TTL_HOURS=24
+```
+
+The response also includes `public_access_expires_at` so the storefront can display or handle the expiration time.
+
 ### Cloudflare frontend origins and CORS
 
 The backend CORS middleware reads `CORS_ORIGINS`, `FRONTEND_URL`, `NEXT_PUBLIC_SITE_URL`, `WOMPI_REDIRECT_URL`, `WOMPI_RETURN_URL`, and `WOMPI_STOREFRONT_URL` and allows those origins automatically. For a Cloudflare QA frontend tunnel, configure the backend like this:

@@ -43,6 +43,23 @@ const generateTrackingNumber = () => `BC-${Date.now()}-${crypto.randomBytes(3).t
 
 const defaultExpiresAt = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
+const getPublicOrderAccessTtlMs = () => {
+  const hours = Number(process.env.PUBLIC_ORDER_ACCESS_TTL_HOURS || 24);
+  return Number.isFinite(hours) && hours > 0 ? hours * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+};
+
+const getPublicOrderAccessExpiresAt = (order: any) => {
+  const explicitExpiration = order?.expires_at ? Date.parse(order.expires_at) : Number.NaN;
+  if (Number.isFinite(explicitExpiration)) return explicitExpiration;
+
+  const createdAt = order?.createdAt ? Date.parse(order.createdAt) : Number.NaN;
+  if (Number.isFinite(createdAt)) return createdAt + getPublicOrderAccessTtlMs();
+
+  return Date.now() + getPublicOrderAccessTtlMs();
+};
+
+const isPublicOrderAccessExpired = (order: any) => Date.now() > getPublicOrderAccessExpiresAt(order);
+
 const getRelationDocumentId = (value: unknown) => {
   if (!value) return undefined;
   if (typeof value === 'string' || typeof value === 'number') return String(value);
@@ -607,6 +624,11 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       (await findOrderByTrackingNumber(strapi, identifier));
 
     if (!order) return ctx.notFound('Order not found');
+    if (isPublicOrderAccessExpired(order)) {
+      ctx.status = 410;
+      ctx.body = { error: { message: 'This public order link has expired' } };
+      return;
+    }
 
     const subtotal = Number(order.subtotal || 0);
     const shippingCost = Number(order.shipping_cost || 0);
@@ -622,6 +644,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
         subtotal,
         shipping_cost: shippingCost,
         total: Number((subtotal + shippingCost).toFixed(2)),
+        public_access_expires_at: new Date(getPublicOrderAccessExpiresAt(order)).toISOString(),
         branch: order.branch ? { name: order.branch.name, address: order.branch.address } : null,
         shipping_rate: order.shipping_rate ? { name: order.shipping_rate.name } : null,
         items: (order.items || []).map(mapOrderItemForPublicResponse),
