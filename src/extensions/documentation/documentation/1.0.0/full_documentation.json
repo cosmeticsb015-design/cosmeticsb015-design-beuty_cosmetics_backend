@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2026-06-18T15:25:21.302Z"
+    "x-generation-date": "2026-06-18T21:25:59.199Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -8729,6 +8729,26 @@
                                     "type": "number",
                                     "format": "float"
                                   },
+                                  "total": {
+                                    "type": "number",
+                                    "format": "float"
+                                  },
+                                  "order_status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pending_shipping",
+                                      "shipped",
+                                      "delivered"
+                                    ]
+                                  },
+                                  "fulfillment_status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pending_shipping",
+                                      "shipped",
+                                      "delivered"
+                                    ]
+                                  },
                                   "payment_status": {
                                     "type": "string",
                                     "enum": [
@@ -8738,7 +8758,37 @@
                                       "refunded"
                                     ]
                                   },
+                                  "internal_payment_status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pending",
+                                      "paid",
+                                      "failed",
+                                      "refunded"
+                                    ]
+                                  },
+                                  "wompi_payment_status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pending",
+                                      "paid",
+                                      "failed",
+                                      "refunded"
+                                    ]
+                                  },
                                   "wompi_transaction_id": {
+                                    "type": "string"
+                                  },
+                                  "wompi_transaction_status": {
+                                    "type": "string"
+                                  },
+                                  "wompi_transaction_message": {
+                                    "type": "string"
+                                  },
+                                  "wompi_authorization_code": {
+                                    "type": "string"
+                                  },
+                                  "wompi_payment_method": {
                                     "type": "string"
                                   },
                                   "expires_at": {
@@ -11505,6 +11555,26 @@
                               "type": "number",
                               "format": "float"
                             },
+                            "total": {
+                              "type": "number",
+                              "format": "float"
+                            },
+                            "order_status": {
+                              "type": "string",
+                              "enum": [
+                                "pending_shipping",
+                                "shipped",
+                                "delivered"
+                              ]
+                            },
+                            "fulfillment_status": {
+                              "type": "string",
+                              "enum": [
+                                "pending_shipping",
+                                "shipped",
+                                "delivered"
+                              ]
+                            },
                             "payment_status": {
                               "type": "string",
                               "enum": [
@@ -11514,7 +11584,37 @@
                                 "refunded"
                               ]
                             },
+                            "internal_payment_status": {
+                              "type": "string",
+                              "enum": [
+                                "pending",
+                                "paid",
+                                "failed",
+                                "refunded"
+                              ]
+                            },
+                            "wompi_payment_status": {
+                              "type": "string",
+                              "enum": [
+                                "pending",
+                                "paid",
+                                "failed",
+                                "refunded"
+                              ]
+                            },
                             "wompi_transaction_id": {
+                              "type": "string"
+                            },
+                            "wompi_transaction_status": {
+                              "type": "string"
+                            },
+                            "wompi_transaction_message": {
+                              "type": "string"
+                            },
+                            "wompi_authorization_code": {
+                              "type": "string"
+                            },
+                            "wompi_payment_method": {
                               "type": "string"
                             },
                             "expires_at": {
@@ -13769,6 +13869,26 @@
                                         "type": "number",
                                         "format": "float"
                                       },
+                                      "total": {
+                                        "type": "number",
+                                        "format": "float"
+                                      },
+                                      "order_status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending_shipping",
+                                          "shipped",
+                                          "delivered"
+                                        ]
+                                      },
+                                      "fulfillment_status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending_shipping",
+                                          "shipped",
+                                          "delivered"
+                                        ]
+                                      },
                                       "payment_status": {
                                         "type": "string",
                                         "enum": [
@@ -13778,7 +13898,37 @@
                                           "refunded"
                                         ]
                                       },
+                                      "internal_payment_status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending",
+                                          "paid",
+                                          "failed",
+                                          "refunded"
+                                        ]
+                                      },
+                                      "wompi_payment_status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending",
+                                          "paid",
+                                          "failed",
+                                          "refunded"
+                                        ]
+                                      },
                                       "wompi_transaction_id": {
+                                        "type": "string"
+                                      },
+                                      "wompi_transaction_status": {
+                                        "type": "string"
+                                      },
+                                      "wompi_transaction_message": {
+                                        "type": "string"
+                                      },
+                                      "wompi_authorization_code": {
+                                        "type": "string"
+                                      },
+                                      "wompi_payment_method": {
                                         "type": "string"
                                       },
                                       "expires_at": {
@@ -16480,6 +16630,26 @@
                                               "type": "number",
                                               "format": "float"
                                             },
+                                            "total": {
+                                              "type": "number",
+                                              "format": "float"
+                                            },
+                                            "order_status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "pending_shipping",
+                                                "shipped",
+                                                "delivered"
+                                              ]
+                                            },
+                                            "fulfillment_status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "pending_shipping",
+                                                "shipped",
+                                                "delivered"
+                                              ]
+                                            },
                                             "payment_status": {
                                               "type": "string",
                                               "enum": [
@@ -16489,7 +16659,37 @@
                                                 "refunded"
                                               ]
                                             },
+                                            "internal_payment_status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "pending",
+                                                "paid",
+                                                "failed",
+                                                "refunded"
+                                              ]
+                                            },
+                                            "wompi_payment_status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "pending",
+                                                "paid",
+                                                "failed",
+                                                "refunded"
+                                              ]
+                                            },
                                             "wompi_transaction_id": {
+                                              "type": "string"
+                                            },
+                                            "wompi_transaction_status": {
+                                              "type": "string"
+                                            },
+                                            "wompi_transaction_message": {
+                                              "type": "string"
+                                            },
+                                            "wompi_authorization_code": {
+                                              "type": "string"
+                                            },
+                                            "wompi_payment_method": {
                                               "type": "string"
                                             },
                                             "expires_at": {
@@ -18134,6 +18334,26 @@
                 "type": "number",
                 "format": "float"
               },
+              "total": {
+                "type": "number",
+                "format": "float"
+              },
+              "order_status": {
+                "type": "string",
+                "enum": [
+                  "pending_shipping",
+                  "shipped",
+                  "delivered"
+                ]
+              },
+              "fulfillment_status": {
+                "type": "string",
+                "enum": [
+                  "pending_shipping",
+                  "shipped",
+                  "delivered"
+                ]
+              },
               "payment_status": {
                 "type": "string",
                 "enum": [
@@ -18143,7 +18363,37 @@
                   "refunded"
                 ]
               },
+              "internal_payment_status": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "paid",
+                  "failed",
+                  "refunded"
+                ]
+              },
+              "wompi_payment_status": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "paid",
+                  "failed",
+                  "refunded"
+                ]
+              },
               "wompi_transaction_id": {
+                "type": "string"
+              },
+              "wompi_transaction_status": {
+                "type": "string"
+              },
+              "wompi_transaction_message": {
+                "type": "string"
+              },
+              "wompi_authorization_code": {
+                "type": "string"
+              },
+              "wompi_payment_method": {
                 "type": "string"
               },
               "expires_at": {
@@ -18311,6 +18561,26 @@
             "type": "number",
             "format": "float"
           },
+          "total": {
+            "type": "number",
+            "format": "float"
+          },
+          "order_status": {
+            "type": "string",
+            "enum": [
+              "pending_shipping",
+              "shipped",
+              "delivered"
+            ]
+          },
+          "fulfillment_status": {
+            "type": "string",
+            "enum": [
+              "pending_shipping",
+              "shipped",
+              "delivered"
+            ]
+          },
           "payment_status": {
             "type": "string",
             "enum": [
@@ -18320,7 +18590,37 @@
               "refunded"
             ]
           },
+          "internal_payment_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "failed",
+              "refunded"
+            ]
+          },
+          "wompi_payment_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "failed",
+              "refunded"
+            ]
+          },
           "wompi_transaction_id": {
+            "type": "string"
+          },
+          "wompi_transaction_status": {
+            "type": "string"
+          },
+          "wompi_transaction_message": {
+            "type": "string"
+          },
+          "wompi_authorization_code": {
+            "type": "string"
+          },
+          "wompi_payment_method": {
             "type": "string"
           },
           "expires_at": {
@@ -20067,6 +20367,26 @@
                                         "type": "number",
                                         "format": "float"
                                       },
+                                      "total": {
+                                        "type": "number",
+                                        "format": "float"
+                                      },
+                                      "order_status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending_shipping",
+                                          "shipped",
+                                          "delivered"
+                                        ]
+                                      },
+                                      "fulfillment_status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending_shipping",
+                                          "shipped",
+                                          "delivered"
+                                        ]
+                                      },
                                       "payment_status": {
                                         "type": "string",
                                         "enum": [
@@ -20076,7 +20396,37 @@
                                           "refunded"
                                         ]
                                       },
+                                      "internal_payment_status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending",
+                                          "paid",
+                                          "failed",
+                                          "refunded"
+                                        ]
+                                      },
+                                      "wompi_payment_status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending",
+                                          "paid",
+                                          "failed",
+                                          "refunded"
+                                        ]
+                                      },
                                       "wompi_transaction_id": {
+                                        "type": "string"
+                                      },
+                                      "wompi_transaction_status": {
+                                        "type": "string"
+                                      },
+                                      "wompi_transaction_message": {
+                                        "type": "string"
+                                      },
+                                      "wompi_authorization_code": {
+                                        "type": "string"
+                                      },
+                                      "wompi_payment_method": {
                                         "type": "string"
                                       },
                                       "expires_at": {
@@ -21225,6 +21575,26 @@
                 "type": "number",
                 "format": "float"
               },
+              "total": {
+                "type": "number",
+                "format": "float"
+              },
+              "order_status": {
+                "type": "string",
+                "enum": [
+                  "pending_shipping",
+                  "shipped",
+                  "delivered"
+                ]
+              },
+              "fulfillment_status": {
+                "type": "string",
+                "enum": [
+                  "pending_shipping",
+                  "shipped",
+                  "delivered"
+                ]
+              },
               "payment_status": {
                 "type": "string",
                 "enum": [
@@ -21234,7 +21604,37 @@
                   "refunded"
                 ]
               },
+              "internal_payment_status": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "paid",
+                  "failed",
+                  "refunded"
+                ]
+              },
+              "wompi_payment_status": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "paid",
+                  "failed",
+                  "refunded"
+                ]
+              },
               "wompi_transaction_id": {
+                "type": "string"
+              },
+              "wompi_transaction_status": {
+                "type": "string"
+              },
+              "wompi_transaction_message": {
+                "type": "string"
+              },
+              "wompi_authorization_code": {
+                "type": "string"
+              },
+              "wompi_payment_method": {
                 "type": "string"
               },
               "expires_at": {
@@ -25133,6 +25533,26 @@
                                             "type": "number",
                                             "format": "float"
                                           },
+                                          "total": {
+                                            "type": "number",
+                                            "format": "float"
+                                          },
+                                          "order_status": {
+                                            "type": "string",
+                                            "enum": [
+                                              "pending_shipping",
+                                              "shipped",
+                                              "delivered"
+                                            ]
+                                          },
+                                          "fulfillment_status": {
+                                            "type": "string",
+                                            "enum": [
+                                              "pending_shipping",
+                                              "shipped",
+                                              "delivered"
+                                            ]
+                                          },
                                           "payment_status": {
                                             "type": "string",
                                             "enum": [
@@ -25142,7 +25562,37 @@
                                               "refunded"
                                             ]
                                           },
+                                          "internal_payment_status": {
+                                            "type": "string",
+                                            "enum": [
+                                              "pending",
+                                              "paid",
+                                              "failed",
+                                              "refunded"
+                                            ]
+                                          },
+                                          "wompi_payment_status": {
+                                            "type": "string",
+                                            "enum": [
+                                              "pending",
+                                              "paid",
+                                              "failed",
+                                              "refunded"
+                                            ]
+                                          },
                                           "wompi_transaction_id": {
+                                            "type": "string"
+                                          },
+                                          "wompi_transaction_status": {
+                                            "type": "string"
+                                          },
+                                          "wompi_transaction_message": {
+                                            "type": "string"
+                                          },
+                                          "wompi_authorization_code": {
+                                            "type": "string"
+                                          },
+                                          "wompi_payment_method": {
                                             "type": "string"
                                           },
                                           "expires_at": {
@@ -28054,6 +28504,26 @@
                                       "type": "number",
                                       "format": "float"
                                     },
+                                    "total": {
+                                      "type": "number",
+                                      "format": "float"
+                                    },
+                                    "order_status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pending_shipping",
+                                        "shipped",
+                                        "delivered"
+                                      ]
+                                    },
+                                    "fulfillment_status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pending_shipping",
+                                        "shipped",
+                                        "delivered"
+                                      ]
+                                    },
                                     "payment_status": {
                                       "type": "string",
                                       "enum": [
@@ -28063,7 +28533,37 @@
                                         "refunded"
                                       ]
                                     },
+                                    "internal_payment_status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pending",
+                                        "paid",
+                                        "failed",
+                                        "refunded"
+                                      ]
+                                    },
+                                    "wompi_payment_status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pending",
+                                        "paid",
+                                        "failed",
+                                        "refunded"
+                                      ]
+                                    },
                                     "wompi_transaction_id": {
+                                      "type": "string"
+                                    },
+                                    "wompi_transaction_status": {
+                                      "type": "string"
+                                    },
+                                    "wompi_transaction_message": {
+                                      "type": "string"
+                                    },
+                                    "wompi_authorization_code": {
+                                      "type": "string"
+                                    },
+                                    "wompi_payment_method": {
                                       "type": "string"
                                     },
                                     "expires_at": {
@@ -29911,6 +30411,26 @@
                   "type": "number",
                   "format": "float"
                 },
+                "total": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "order_status": {
+                  "type": "string",
+                  "enum": [
+                    "pending_shipping",
+                    "shipped",
+                    "delivered"
+                  ]
+                },
+                "fulfillment_status": {
+                  "type": "string",
+                  "enum": [
+                    "pending_shipping",
+                    "shipped",
+                    "delivered"
+                  ]
+                },
                 "payment_status": {
                   "type": "string",
                   "enum": [
@@ -29920,7 +30440,37 @@
                     "refunded"
                   ]
                 },
+                "internal_payment_status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "paid",
+                    "failed",
+                    "refunded"
+                  ]
+                },
+                "wompi_payment_status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "paid",
+                    "failed",
+                    "refunded"
+                  ]
+                },
                 "wompi_transaction_id": {
+                  "type": "string"
+                },
+                "wompi_transaction_status": {
+                  "type": "string"
+                },
+                "wompi_transaction_message": {
+                  "type": "string"
+                },
+                "wompi_authorization_code": {
+                  "type": "string"
+                },
+                "wompi_payment_method": {
                   "type": "string"
                 },
                 "expires_at": {
@@ -34726,6 +35276,26 @@
                                       "type": "number",
                                       "format": "float"
                                     },
+                                    "total": {
+                                      "type": "number",
+                                      "format": "float"
+                                    },
+                                    "order_status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pending_shipping",
+                                        "shipped",
+                                        "delivered"
+                                      ]
+                                    },
+                                    "fulfillment_status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pending_shipping",
+                                        "shipped",
+                                        "delivered"
+                                      ]
+                                    },
                                     "payment_status": {
                                       "type": "string",
                                       "enum": [
@@ -34735,7 +35305,37 @@
                                         "refunded"
                                       ]
                                     },
+                                    "internal_payment_status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pending",
+                                        "paid",
+                                        "failed",
+                                        "refunded"
+                                      ]
+                                    },
+                                    "wompi_payment_status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pending",
+                                        "paid",
+                                        "failed",
+                                        "refunded"
+                                      ]
+                                    },
                                     "wompi_transaction_id": {
+                                      "type": "string"
+                                    },
+                                    "wompi_transaction_status": {
+                                      "type": "string"
+                                    },
+                                    "wompi_transaction_message": {
+                                      "type": "string"
+                                    },
+                                    "wompi_authorization_code": {
+                                      "type": "string"
+                                    },
+                                    "wompi_payment_method": {
                                       "type": "string"
                                     },
                                     "expires_at": {

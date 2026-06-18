@@ -644,10 +644,21 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
     delivery_type: Schema.Attribute.Enumeration<['delivery', 'pickup']> &
       Schema.Attribute.Required;
     expires_at: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    fulfillment_status: Schema.Attribute.Enumeration<
+      ['pending_shipping', 'shipped', 'delivered']
+    > &
+      Schema.Attribute.DefaultTo<'pending_shipping'>;
+    internal_payment_status: Schema.Attribute.Enumeration<
+      ['pending', 'paid', 'failed', 'refunded']
+    >;
     items: Schema.Attribute.Relation<'oneToMany', 'api::order-item.order-item'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::order.order'> &
       Schema.Attribute.Private;
+    order_status: Schema.Attribute.Enumeration<
+      ['pending_shipping', 'shipped', 'delivered']
+    > &
+      Schema.Attribute.DefaultTo<'pending_shipping'>;
     payment_status: Schema.Attribute.Enumeration<
       ['pending', 'paid', 'failed', 'refunded']
     > &
@@ -659,17 +670,25 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
       'api::shipping-rate.shipping-rate'
     >;
     subtotal: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    total: Schema.Attribute.Decimal;
     tracking_number: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    wompi_authorization_code: Schema.Attribute.String;
     wompi_payment_link_id: Schema.Attribute.Integer;
     wompi_payment_link_long_url: Schema.Attribute.String;
     wompi_payment_link_qr_url: Schema.Attribute.String;
     wompi_payment_link_url: Schema.Attribute.String;
+    wompi_payment_method: Schema.Attribute.String;
+    wompi_payment_status: Schema.Attribute.Enumeration<
+      ['pending', 'paid', 'failed', 'refunded']
+    >;
     wompi_transaction_id: Schema.Attribute.String;
+    wompi_transaction_message: Schema.Attribute.Text;
+    wompi_transaction_status: Schema.Attribute.String;
   };
 }
 
