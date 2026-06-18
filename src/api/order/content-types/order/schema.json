@@ -48,9 +48,43 @@
       "type": "decimal",
       "required": true
     },
+    "total": {
+      "type": "decimal"
+    },
+    "order_status": {
+      "type": "enumeration",
+      "default": "pending_shipping",
+      "enum": [
+        "pending_shipping",
+        "shipped",
+        "delivered",
+        "completed",
+        "cancelled"
+      ]
+    },
+    "fulfillment_status": {
+      "type": "enumeration",
+      "default": "pending_shipping",
+      "enum": [
+        "pending_shipping",
+        "shipped",
+        "delivered",
+        "completed",
+        "cancelled"
+      ]
+    },
     "payment_status": {
       "type": "enumeration",
       "default": "pending",
+      "enum": [
+        "pending",
+        "paid",
+        "failed",
+        "refunded"
+      ]
+    },
+    "internal_payment_status": {
+      "type": "enumeration",
       "enum": [
         "pending",
         "paid",

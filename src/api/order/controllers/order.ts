@@ -553,7 +553,12 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
         address: payload.address,
         subtotal: Number(subtotal.toFixed(2)),
         shipping_cost: Number(shippingCost.toFixed(2)),
+        total: Number((subtotal + shippingCost).toFixed(2)),
+        order_status: 'pending_shipping',
+        fulfillment_status: 'pending_shipping',
         payment_status: 'pending',
+        internal_payment_status: 'pending',
+        wompi_payment_status: 'pending',
         expires_at: payload.expires_at || defaultExpiresAt(),
         branch: branchDocumentId,
         shipping_rate: getRelationDocumentId(payload.shipping_rate),
@@ -647,6 +652,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       documentId: order.documentId,
       data: {
         payment_status: paid ? 'paid' : 'failed',
+        internal_payment_status: paid ? 'paid' : 'failed',
         wompi_payment_status: paid ? 'paid' : 'failed',
         wompi_transaction_id: String(transactionId),
         wompi_transaction_status: getWompiResultLabel(payload.ResultadoTransaccion || payload.resultadoTransaccion),
@@ -687,6 +693,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       documentId: order.documentId,
       data: {
         payment_status: redirectPaymentStatus,
+        internal_payment_status: redirectPaymentStatus,
         wompi_payment_status: redirectPaymentStatus,
         wompi_transaction_id: transactionDetails.wompi_transaction_id || transactionId,
         wompi_transaction_status: transactionDetails.wompi_transaction_status,
