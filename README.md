@@ -125,3 +125,22 @@ WOMPI_WEBHOOK_URL=https://compete-number-expand-kinda.trycloudflare.com/api/womp
 ```
 
 With this setup, Wompi sends the shopper back to the storefront redirect URL after finishing payment, while payment confirmation is handled by the Strapi webhook. Use the Strapi redirect endpoint only when you intentionally want Strapi to validate the redirect hash and then forward the shopper to `WOMPI_RETURN_URL`.
+
+### Troubleshooting webhook 404 in the storefront terminal
+
+If the storefront terminal logs `POST /api/payments/wompi/webhook 404`, Wompi is calling the storefront tunnel for the webhook. That endpoint must point to Strapi unless the frontend explicitly proxies it to Strapi.
+
+Use the Strapi tunnel for the webhook:
+
+```env
+WOMPI_WEBHOOK_URL=https://compete-number-expand-kinda.trycloudflare.com/api/wompi/webhook
+```
+
+Use the storefront tunnel only for the customer redirect/return page:
+
+```env
+WOMPI_REDIRECT_URL=https://crops-sherman-output-relocation.trycloudflare.com/api/payments/wompi/close
+WOMPI_RETURN_URL=https://crops-sherman-output-relocation.trycloudflare.com/gracias-por-su-compra
+```
+
+After changing these variables, restart Strapi and create a new Wompi payment link. Existing Wompi links keep the old webhook URL, so they will continue to call the wrong endpoint until a new link is generated.
