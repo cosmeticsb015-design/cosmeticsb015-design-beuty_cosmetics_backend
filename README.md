@@ -128,7 +128,7 @@ WOMPI_WEBHOOK_URL=https://compete-number-expand-kinda.trycloudflare.com/api/womp
 # WOMPI_THANK_YOU_PATH=/checkout/gracias-por-su-compra
 ```
 
-With this setup, Wompi first sends the shopper back to Strapi at `/api/wompi/redirect`; Strapi validates Wompi's signed query string and then redirects the shopper to the storefront `/checkout/gracias-por-su-compra` page with both the original Wompi params and the normalized order fields. Payment confirmation is handled by the Strapi webhook.
+With this setup, Wompi first sends the shopper back to Strapi at `/api/wompi/redirect`; Strapi validates Wompi's signed query string and then redirects the shopper to the storefront `/checkout/gracias-por-su-compra` page with both the original Wompi params and the normalized order fields. The backend also embeds `order` and `tracking_number` in the Wompi `urlRedirect` as a compatibility fallback for the current storefront page, which only reads those two parameters before loading `/api/orders/public/:identifier`. Payment confirmation is handled by the Strapi webhook.
 
 ### Troubleshooting webhook 404 in the storefront terminal
 

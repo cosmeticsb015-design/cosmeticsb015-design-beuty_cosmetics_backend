@@ -134,16 +134,28 @@ const looksLikeStorefrontThankYouUrl = (value: string) => {
 // antes de reenviar al cliente al frontend. Si WOMPI_REDIRECT_URL quedó apuntando
 // al storefront por compatibilidad, derivamos el redirect público desde el webhook
 // o desde WOMPI_BACKEND_URL para evitar enviar a Wompi directo al frontend.
-const getWompiCustomerRedirectUrl = () => {
+const appendOrderReturnParams = (redirectUrl: string, order: any) => {
+  try {
+    const url = new URL(redirectUrl);
+    url.searchParams.set('order', order.documentId);
+    url.searchParams.set('tracking_number', order.tracking_number);
+    url.searchParams.set('payment_status', order.payment_status);
+    return url.toString();
+  } catch {
+    return redirectUrl;
+  }
+};
+
+const getWompiCustomerRedirectUrl = (order: any) => {
   const configuredRedirectUrl = requiredEnv('WOMPI_REDIRECT_URL').trim();
 
-  if (!looksLikeStorefrontThankYouUrl(configuredRedirectUrl)) return configuredRedirectUrl;
+  const redirectUrl = looksLikeStorefrontThankYouUrl(configuredRedirectUrl)
+    ? buildBackendWompiRedirectUrl(process.env.WOMPI_BACKEND_URL || '') ||
+      buildBackendWompiRedirectUrl(getWompiWebhookUrl()) ||
+      configuredRedirectUrl
+    : configuredRedirectUrl;
 
-  const backendRedirectUrl =
-    buildBackendWompiRedirectUrl(process.env.WOMPI_BACKEND_URL || '') ||
-    buildBackendWompiRedirectUrl(getWompiWebhookUrl());
-
-  return backendRedirectUrl || configuredRedirectUrl;
+  return appendOrderReturnParams(redirectUrl, order);
 };
 
 // Destino final para el cliente (FRONTEND), una vez que el backend valida la transacción
@@ -163,7 +175,8 @@ const getConfiguredWompiReturnUrl = () => {
   }
 };
 
-const getWompiCustomerReturnUrl = () => getConfiguredWompiReturnUrl() || getWompiCustomerRedirectUrl();
+const getWompiCustomerReturnUrl = (order: any) =>
+  getConfiguredWompiReturnUrl() || getWompiCustomerRedirectUrl(order);
 
 // Wompi's "Enlace de Pago" no soporta una lista de items: solo nombreProducto (string)
 // e infoProducto.descripcionProducto (string). Construimos ambos a partir de los
@@ -208,8 +221,8 @@ const buildWompiPaymentLinkPayload = (order: any) => {
       descripcionProducto: buildWompiProductDescription(order),
     },
     configuracion: {
-      urlRedirect: getWompiCustomerRedirectUrl(),
-      urlRetorno: getWompiCustomerReturnUrl(),
+      urlRedirect: getWompiCustomerRedirectUrl(order),
+      urlRetorno: getWompiCustomerReturnUrl(order),
       urlWebhook: getWompiWebhookUrl(),
       emailsNotificacion: getWompiNotificationEmails(order),
       notificarTransaccionCliente: true,
