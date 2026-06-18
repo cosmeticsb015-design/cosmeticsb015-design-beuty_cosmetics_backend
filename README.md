@@ -163,6 +163,12 @@ The public order detail URL used by the storefront thank-you page is intentional
 PUBLIC_ORDER_ACCESS_TTL_HOURS=24
 ```
 
+For short QA tests, use minutes instead. When `PUBLIC_ORDER_ACCESS_TTL_MINUTES` is set, it takes precedence over hours:
+
+```env
+PUBLIC_ORDER_ACCESS_TTL_MINUTES=1
+```
+
 The response also includes `public_access_expires_at` so the storefront can display or handle the expiration time.
 
 ### Cloudflare frontend origins and CORS

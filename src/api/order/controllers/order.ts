@@ -44,6 +44,9 @@ const generateTrackingNumber = () => `BC-${Date.now()}-${crypto.randomBytes(3).t
 const defaultExpiresAt = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
 const getPublicOrderAccessTtlMs = () => {
+  const minutes = Number(process.env.PUBLIC_ORDER_ACCESS_TTL_MINUTES || 0);
+  if (Number.isFinite(minutes) && minutes > 0) return minutes * 60 * 1000;
+
   const hours = Number(process.env.PUBLIC_ORDER_ACCESS_TTL_HOURS || 24);
   return Number.isFinite(hours) && hours > 0 ? hours * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
 };
