@@ -57,9 +57,7 @@
       "enum": [
         "pending_shipping",
         "shipped",
-        "delivered",
-        "completed",
-        "cancelled"
+        "delivered"
       ]
     },
     "fulfillment_status": {
@@ -68,9 +66,7 @@
       "enum": [
         "pending_shipping",
         "shipped",
-        "delivered",
-        "completed",
-        "cancelled"
+        "delivered"
       ]
     },
     "payment_status": {
