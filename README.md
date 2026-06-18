@@ -163,4 +163,13 @@ FRONTEND_URL=https://wow-political-automobile-webcast.trycloudflare.com
 CORS_ORIGINS=http://localhost:3000,https://wow-political-automobile-webcast.trycloudflare.com
 ```
 
-Next.js HMR websocket errors such as `/_next/webpack-hmr` are controlled by the frontend dev server, not Strapi. In the frontend repo, add the current `trycloudflare.com` host to `allowedDevOrigins` in `next.config.js` for local development.
+Next.js HMR websocket errors such as `/_next/webpack-hmr` are controlled by the frontend dev server, not Strapi. They do not come from the Wompi backend routes, the Strapi CORS middleware, or the order lookup endpoint. In the frontend repo, add the current `trycloudflare.com` host to `allowedDevOrigins` in `next.config.js` for local development and restart the Next.js dev server:
+
+```js
+// beauty_cosmetics_frontend/next.config.js
+module.exports = {
+  allowedDevOrigins: ['bathroom-publisher-enterprises-had.trycloudflare.com'],
+};
+```
+
+If the tunnel hostname changes, replace the hostname in `allowedDevOrigins` with the new Cloudflare hostname. This is a development-only Next.js setting; rebuilding or restarting Strapi will not stop the HMR websocket retry loop.
