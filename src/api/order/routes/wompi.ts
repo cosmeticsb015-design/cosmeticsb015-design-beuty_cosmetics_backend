@@ -42,5 +42,11 @@ export default {
       handler: 'order.wompiRedirect',
       config: { auth: false },
     },
+    {
+      method: 'GET',
+      path: '/checkout/gracias-por-su-compra',
+      handler: 'order.wompiRedirect',
+      config: { auth: false },
+    },
   ],
 };

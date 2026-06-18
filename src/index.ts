@@ -7,7 +7,7 @@ const getWompiStorefrontReturnUrl = () => {
   const storefrontUrl = (process.env.WOMPI_STOREFRONT_URL || '').trim();
   if (!storefrontUrl) return '';
 
-  const thankYouPath = process.env.WOMPI_THANK_YOU_PATH || '/gracias-por-su-compra';
+  const thankYouPath = process.env.WOMPI_THANK_YOU_PATH || '/checkout/gracias-por-su-compra';
   try {
     return new URL(thankYouPath, storefrontUrl).toString();
   } catch {
@@ -47,16 +47,24 @@ export default {
    * run jobs, or perform some special logic.
    */
   bootstrap({ strapi }) {
+    const wompiThankYouRedirect = (ctx) => {
+      const returnUrl = getWompiStorefrontReturnUrl();
+      if (!returnUrl) return ctx.notFound('Wompi storefront return URL is not configured');
+
+      return ctx.redirect(appendQuery(returnUrl, ctx.query));
+    };
+
     strapi.server.routes([
       {
         method: 'GET',
         path: '/gracias-por-su-compra',
-        handler: (ctx) => {
-          const returnUrl = getWompiStorefrontReturnUrl();
-          if (!returnUrl) return ctx.notFound('Wompi storefront return URL is not configured');
-
-          return ctx.redirect(appendQuery(returnUrl, ctx.query));
-        },
+        handler: wompiThankYouRedirect,
+        config: { auth: false },
+      },
+      {
+        method: 'GET',
+        path: '/checkout/gracias-por-su-compra',
+        handler: wompiThankYouRedirect,
         config: { auth: false },
       },
     ]);

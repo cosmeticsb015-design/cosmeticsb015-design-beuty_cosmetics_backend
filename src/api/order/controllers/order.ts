@@ -118,7 +118,7 @@ const getConfiguredWompiReturnUrl = () => {
   const storefrontUrl = (process.env.WOMPI_STOREFRONT_URL || '').trim();
   if (!storefrontUrl) return '';
 
-  const thankYouPath = process.env.WOMPI_THANK_YOU_PATH || '/gracias-por-su-compra';
+  const thankYouPath = process.env.WOMPI_THANK_YOU_PATH || '/checkout/gracias-por-su-compra';
   try {
     return new URL(thankYouPath, storefrontUrl).toString();
   } catch {

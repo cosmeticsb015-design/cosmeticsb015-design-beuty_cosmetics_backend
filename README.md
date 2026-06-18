@@ -115,13 +115,13 @@ WOMPI_URL_AUTH=https://id.wompi.sv/connect/token
 WOMPI_URL_API=https://api.wompi.sv
 # Customer redirect after finishing payment in Wompi (storefront tunnel)
 WOMPI_REDIRECT_URL=https://crops-sherman-output-relocation.trycloudflare.com/api/payments/wompi/close
-WOMPI_RETURN_URL=https://crops-sherman-output-relocation.trycloudflare.com/gracias-por-su-compra
+WOMPI_RETURN_URL=https://crops-sherman-output-relocation.trycloudflare.com/checkout/gracias-por-su-compra
 
 # Server-to-server payment confirmation (Strapi tunnel)
 WOMPI_WEBHOOK_URL=https://compete-number-expand-kinda.trycloudflare.com/api/wompi/webhook
 # Alternatively, you can use:
 # WOMPI_STOREFRONT_URL=https://crops-sherman-output-relocation.trycloudflare.com
-# WOMPI_THANK_YOU_PATH=/gracias-por-su-compra
+# WOMPI_THANK_YOU_PATH=/checkout/gracias-por-su-compra
 ```
 
 With this setup, Wompi sends the shopper back to `WOMPI_REDIRECT_URL` after finishing payment. Keep this URL on the storefront `/api/payments/wompi/close` route so the frontend can run its close/thank-you flow. `WOMPI_RETURN_URL` is only the final storefront thank-you page used as Wompi's return URL/fallback; it should not replace `WOMPI_REDIRECT_URL` in the payment-link payload. Payment confirmation is handled by the Strapi webhook.
@@ -140,11 +140,11 @@ Use the storefront tunnel only for the customer redirect/return page:
 
 ```env
 WOMPI_REDIRECT_URL=https://crops-sherman-output-relocation.trycloudflare.com/api/payments/wompi/close
-WOMPI_RETURN_URL=https://crops-sherman-output-relocation.trycloudflare.com/gracias-por-su-compra
+WOMPI_RETURN_URL=https://crops-sherman-output-relocation.trycloudflare.com/checkout/gracias-por-su-compra
 ```
 
 After changing these variables, restart Strapi and create a new Wompi payment link. Existing Wompi links keep the old webhook URL, so they will continue to call the wrong endpoint until a new link is generated.
 
-If an old Wompi link already redirects to the Strapi host at `/gracias-por-su-compra`, Strapi also exposes that path as a compatibility alias for the signed Wompi redirect. It validates the Wompi hash and then forwards to the configured storefront return URL. For new links, prefer the storefront tunnel in `WOMPI_REDIRECT_URL`.
+If an old Wompi link already redirects to the Strapi host at `/checkout/gracias-por-su-compra`, Strapi also exposes that path as a compatibility alias for the signed Wompi redirect. It validates the Wompi hash and then forwards to the configured storefront return URL. For new links, prefer the storefront tunnel in `WOMPI_REDIRECT_URL`.
 
-If a Wompi link was already generated with the root Strapi URL `/gracias-por-su-compra` instead of an `/api/*` route, Strapi registers a root compatibility redirect for that path during bootstrap. It forwards the full Wompi query string to `WOMPI_RETURN_URL` or to `WOMPI_STOREFRONT_URL + WOMPI_THANK_YOU_PATH`. This is only a QA safety net; the correct fix is still to generate a new link with the storefront `WOMPI_REDIRECT_URL`.
+If a Wompi link was already generated with the root Strapi URL `/checkout/gracias-por-su-compra` instead of an `/api/*` route, Strapi registers a root compatibility redirect for that path during bootstrap. It forwards the full Wompi query string to `WOMPI_RETURN_URL` or to `WOMPI_STOREFRONT_URL + WOMPI_THANK_YOU_PATH`. This is only a QA safety net; the correct fix is still to generate a new link with the storefront `WOMPI_REDIRECT_URL`.
