@@ -59,3 +59,66 @@ Feel free to check out the [Strapi GitHub repository](https://github.com/strapi/
 ---
 
 <sub>🤫 Psst! [Strapi is hiring](https://strapi.io/careers).</sub>
+
+## Wompi QA with Cloudflare Tunnel
+
+For QA/local testing, Wompi must receive public HTTPS URLs. If you run:
+
+```bash
+cloudflared tunnel --url http://localhost:8000
+```
+
+and Cloudflare gives you `https://santa-ball-injured-upgrade.trycloudflare.com`, configure the frontend/API route environment with that same host:
+
+```env
+WOMPI_WEBHOOK_QA_OVERRIDE=false
+WOMPI_URL_AUTH=https://id.wompi.sv/connect/token
+WOMPI_URL_API=https://api.wompi.sv
+WOMPI_REDIRECT_URL=https://santa-ball-injured-upgrade.trycloudflare.com/api/payments/wompi/close
+WOMPI_WEBHOOK_URL=https://santa-ball-injured-upgrade.trycloudflare.com/api/payments/wompi/webhook
+```
+
+Use `/api/payments/wompi/*` when the tunnel points to the storefront/Next.js app. If the tunnel points directly to Strapi, use Strapi's routes instead:
+
+```env
+WOMPI_REDIRECT_URL=https://santa-ball-injured-upgrade.trycloudflare.com/api/wompi/redirect
+WOMPI_WEBHOOK_URL=https://santa-ball-injured-upgrade.trycloudflare.com/api/wompi/webhook
+```
+
+Restart the app after changing the environment variables. Quick Cloudflare Tunnel URLs change every time you start a new unnamed tunnel, so update the Wompi variables whenever the generated `trycloudflare.com` host changes.
+
+If Cloudflare logs `connect: connection refused` for `127.0.0.1:8000`, the tunnel is working but the local origin is not running on port 8000. Start the storefront on that port or point the tunnel to the running Strapi port instead, for example:
+
+```bash
+cloudflared tunnel --url http://localhost:1337
+```
+
+When the tunnel points directly to Strapi, set `WOMPI_RETURN_URL` to the storefront thank-you page URL. After Wompi calls `/api/wompi/redirect`, Strapi validates the signed redirect and forwards the shopper to `WOMPI_RETURN_URL` with order and transaction query parameters.
+
+### Dual-tunnel QA setup
+
+If you run one tunnel for Strapi and one tunnel for the storefront, use the Strapi tunnel for Wompi callback URLs and the storefront tunnel only as the final return page:
+
+```bash
+cloudflared tunnel --url http://localhost:1337
+# example Strapi tunnel: https://compete-number-expand-kinda.trycloudflare.com
+
+cloudflared tunnel --url http://localhost:3000
+# example storefront tunnel: https://crops-sherman-output-relocation.trycloudflare.com
+```
+
+Configure the backend Wompi variables like this:
+
+```env
+WOMPI_WEBHOOK_QA_OVERRIDE=false
+WOMPI_URL_AUTH=https://id.wompi.sv/connect/token
+WOMPI_URL_API=https://api.wompi.sv
+WOMPI_REDIRECT_URL=https://compete-number-expand-kinda.trycloudflare.com/api/wompi/redirect
+WOMPI_WEBHOOK_URL=https://compete-number-expand-kinda.trycloudflare.com/api/wompi/webhook
+WOMPI_RETURN_URL=https://crops-sherman-output-relocation.trycloudflare.com/gracias-por-su-compra
+# Alternatively, you can use:
+# WOMPI_STOREFRONT_URL=https://crops-sherman-output-relocation.trycloudflare.com
+# WOMPI_THANK_YOU_PATH=/gracias-por-su-compra
+```
+
+With this setup, Wompi calls Strapi for the signed redirect and webhook. Strapi updates the order from the webhook, validates the redirect hash, and forwards the shopper to the storefront thank-you page configured in `WOMPI_RETURN_URL` or derived from `WOMPI_STOREFRONT_URL` plus `WOMPI_THANK_YOU_PATH`.

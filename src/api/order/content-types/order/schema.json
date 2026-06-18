@@ -82,6 +82,18 @@
       "relation": "oneToMany",
       "target": "api::order-item.order-item",
       "mappedBy": "order"
+    },
+    "wompi_payment_link_id": {
+      "type": "integer"
+    },
+    "wompi_payment_link_url": {
+      "type": "string"
+    },
+    "wompi_payment_link_long_url": {
+      "type": "string"
+    },
+    "wompi_payment_link_qr_url": {
+      "type": "string"
     }
   }
 }
