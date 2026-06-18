@@ -172,4 +172,6 @@ module.exports = {
 };
 ```
 
-If the tunnel hostname changes, replace the hostname in `allowedDevOrigins` with the new Cloudflare hostname. This is a development-only Next.js setting; rebuilding or restarting Strapi will not stop the HMR websocket retry loop.
+`allowedDevOrigins` must contain the frontend dev-server host only, without `https://`. Do not put the Strapi/backend tunnel here. For example, if the browser page is open at `https://bathroom-publisher-enterprises-had.trycloudflare.com`, use `bathroom-publisher-enterprises-had.trycloudflare.com`; if the backend tunnel is `https://importantly-adrian-tapes-frontier.trycloudflare.com`, that backend value belongs in the frontend API base URL variables and in the backend `WOMPI_BACKEND_URL`, not in `allowedDevOrigins`.
+
+If the tunnel hostname changes, replace the hostname in `allowedDevOrigins` with the new frontend Cloudflare hostname. This is a development-only Next.js setting; rebuilding or restarting Strapi will not stop the HMR websocket retry loop.
