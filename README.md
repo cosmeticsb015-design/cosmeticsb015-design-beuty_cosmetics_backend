@@ -68,13 +68,13 @@ For QA/local testing, Wompi must receive public HTTPS URLs. If you run:
 cloudflared tunnel --url http://localhost:8000
 ```
 
-and Cloudflare gives you `https://santa-ball-injured-upgrade.trycloudflare.com`, configure the frontend/API route environment with that same host:
+and Cloudflare gives you `https://santa-ball-injured-upgrade.trycloudflare.com`, configure the storefront return environment with that same host:
 
 ```env
 WOMPI_WEBHOOK_QA_OVERRIDE=false
 WOMPI_URL_AUTH=https://id.wompi.sv/connect/token
 WOMPI_URL_API=https://api.wompi.sv
-WOMPI_REDIRECT_URL=https://santa-ball-injured-upgrade.trycloudflare.com/api/payments/wompi/close
+WOMPI_REDIRECT_URL=https://santa-ball-injured-upgrade.trycloudflare.com/checkout/gracias-por-su-compra
 WOMPI_WEBHOOK_URL=https://santa-ball-injured-upgrade.trycloudflare.com/api/payments/wompi/webhook
 ```
 
@@ -114,7 +114,7 @@ WOMPI_WEBHOOK_QA_OVERRIDE=false
 WOMPI_URL_AUTH=https://id.wompi.sv/connect/token
 WOMPI_URL_API=https://api.wompi.sv
 # Customer redirect after finishing payment in Wompi (storefront tunnel)
-WOMPI_REDIRECT_URL=https://crops-sherman-output-relocation.trycloudflare.com/api/payments/wompi/close
+WOMPI_REDIRECT_URL=https://crops-sherman-output-relocation.trycloudflare.com/checkout/gracias-por-su-compra
 WOMPI_RETURN_URL=https://crops-sherman-output-relocation.trycloudflare.com/checkout/gracias-por-su-compra
 
 # Server-to-server payment confirmation (Strapi tunnel)
@@ -124,7 +124,7 @@ WOMPI_WEBHOOK_URL=https://compete-number-expand-kinda.trycloudflare.com/api/womp
 # WOMPI_THANK_YOU_PATH=/checkout/gracias-por-su-compra
 ```
 
-With this setup, Wompi sends the shopper back to `WOMPI_REDIRECT_URL` after finishing payment. Keep this URL on the storefront `/api/payments/wompi/close` route so the frontend can run its close/thank-you flow. `WOMPI_RETURN_URL` is only the final storefront thank-you page used as Wompi's return URL/fallback; it should not replace `WOMPI_REDIRECT_URL` in the payment-link payload. Payment confirmation is handled by the Strapi webhook.
+With this setup, Wompi sends the shopper back to the storefront thank-you page after finishing payment. Keep this URL on the storefront `/checkout/gracias-por-su-compra` page because the current frontend page reads Wompi query params and verifies them with `/api/checkout/wompi/redirect`. Payment confirmation is handled by the Strapi webhook.
 
 ### Troubleshooting webhook 404 in the storefront terminal
 
@@ -139,7 +139,7 @@ WOMPI_WEBHOOK_URL=https://compete-number-expand-kinda.trycloudflare.com/api/womp
 Use the storefront tunnel only for the customer redirect/return page:
 
 ```env
-WOMPI_REDIRECT_URL=https://crops-sherman-output-relocation.trycloudflare.com/api/payments/wompi/close
+WOMPI_REDIRECT_URL=https://crops-sherman-output-relocation.trycloudflare.com/checkout/gracias-por-su-compra
 WOMPI_RETURN_URL=https://crops-sherman-output-relocation.trycloudflare.com/checkout/gracias-por-su-compra
 ```
 

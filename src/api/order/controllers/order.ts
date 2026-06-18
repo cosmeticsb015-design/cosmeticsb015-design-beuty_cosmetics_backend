@@ -126,7 +126,7 @@ const getConfiguredWompiReturnUrl = () => {
   }
 };
 
-const getWompiCustomerRedirectUrl = () => requiredEnv('WOMPI_REDIRECT_URL');
+const getWompiCustomerRedirectUrl = () => getConfiguredWompiReturnUrl() || requiredEnv('WOMPI_REDIRECT_URL');
 
 const getWompiCustomerReturnUrl = () => getConfiguredWompiReturnUrl() || getWompiCustomerRedirectUrl();
 
