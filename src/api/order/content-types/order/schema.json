@@ -61,6 +61,18 @@
     "wompi_transaction_id": {
       "type": "string"
     },
+    "wompi_transaction_status": {
+      "type": "string"
+    },
+    "wompi_transaction_message": {
+      "type": "text"
+    },
+    "wompi_authorization_code": {
+      "type": "string"
+    },
+    "wompi_payment_method": {
+      "type": "string"
+    },
     "expires_at": {
       "type": "datetime",
       "required": true
