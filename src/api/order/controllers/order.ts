@@ -66,6 +66,37 @@ const getPaymentStatusFromWompiRedirect = (query: Record<string, unknown>) => {
   return 'pending';
 };
 
+const normalizeWompiTransactionDetails = (transaction: any = {}) => ({
+  wompi_transaction_id: String(transaction.idTransaccion || transaction.IdTransaccion || ''),
+  wompi_transaction_status: getWompiResultLabel(transaction.resultadoTransaccion || transaction.ResultadoTransaccion),
+  wompi_transaction_message: transaction.mensaje || transaction.Mensaje || '',
+  wompi_authorization_code: transaction.codigoAutorizacion || transaction.CodigoAutorizacion || '',
+  wompi_payment_method: getWompiPaymentMethodLabel(
+    transaction.formaPago || transaction.FormaPago || transaction.formaPagoUtilizada || transaction.FormaPagoUtilizada,
+  ),
+});
+
+const getPaymentStatusFromWompiTransaction = (transaction: any, fallback: 'pending' | 'paid' | 'failed') => {
+  if (!transaction) return fallback;
+  if (transaction.esAprobada === true || transaction.EsAprobada === true) return 'paid';
+
+  const result = getWompiResultLabel(transaction.resultadoTransaccion || transaction.ResultadoTransaccion).toLowerCase();
+  if (['exitosadeclinada', 'fallida'].includes(result)) return 'failed';
+
+  return fallback;
+};
+
+const fetchWompiTransactionDetails = async (strapi: any, transactionId: string) => {
+  if (!transactionId) return null;
+
+  try {
+    return await strapi.service('api::order.wompi').getTransaction(transactionId);
+  } catch (error) {
+    strapi.log.warn(`Unable to fetch Wompi transaction ${transactionId}: ${error instanceof Error ? error.message : error}`);
+    return null;
+  }
+};
+
 const getOrderTotal = (order: any) => Number(order.subtotal || 0) + Number(order.shipping_cost || 0);
 
 type OrderItemInput = {
@@ -620,7 +651,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
         wompi_transaction_status: getWompiResultLabel(payload.ResultadoTransaccion || payload.resultadoTransaccion),
         wompi_transaction_message: payload.Mensaje || payload.mensaje || '',
         wompi_authorization_code: payload.CodigoAutorizacion || payload.codigoAutorizacion || '',
-        wompi_payment_method: getWompiPaymentMethodLabel(payload.FormaPago || payload.formaPago),
+        wompi_payment_method: getWompiPaymentMethodLabel(payload.FormaPago || payload.formaPago || payload.FormaPagoUtilizada || payload.formaPagoUtilizada),
       },
       status: 'published',
     });
@@ -646,20 +677,25 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
     const order = await findOrderByCommerceId(strapi, String(query.identificadorEnlaceComercio || ''));
     if (!order) return ctx.notFound('Order not found for Wompi redirect');
 
-    const redirectPaymentStatus = getPaymentStatusFromWompiRedirect(query);
+    const transactionId = String(query.idTransaccion || '');
+    const transaction = await fetchWompiTransactionDetails(strapi, transactionId);
+    const redirectPaymentStatus = getPaymentStatusFromWompiTransaction(transaction, getPaymentStatusFromWompiRedirect(query));
+    const transactionDetails = normalizeWompiTransactionDetails(transaction || {});
+
     await strapi.documents('api::order.order').update({
       documentId: order.documentId,
       data: {
         payment_status: redirectPaymentStatus,
-        wompi_transaction_id: String(query.idTransaccion || ''),
-        wompi_transaction_status: getWompiResultLabel(query.resultadoTransaccion || query.ResultadoTransaccion),
-        wompi_authorization_code: String(query.codigoAutorizacion || ''),
-        wompi_payment_method: getWompiPaymentMethodLabel(query.formaPago),
+        wompi_transaction_id: transactionDetails.wompi_transaction_id || transactionId,
+        wompi_transaction_status: transactionDetails.wompi_transaction_status,
+        wompi_transaction_message: transactionDetails.wompi_transaction_message,
+        wompi_authorization_code: transactionDetails.wompi_authorization_code,
+        wompi_payment_method: transactionDetails.wompi_payment_method,
       },
       status: 'published',
     });
 
-    const updatedOrder = { ...order, payment_status: redirectPaymentStatus, wompi_transaction_id: String(query.idTransaccion || '') };
+    const updatedOrder = { ...order, payment_status: redirectPaymentStatus, wompi_transaction_id: transactionDetails.wompi_transaction_id || transactionId };
     const returnUrl = buildWompiReturnUrl(updatedOrder, query);
     if (returnUrl) return ctx.redirect(returnUrl);
 

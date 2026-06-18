@@ -76,4 +76,8 @@ export default factories.createCoreService('api::order.order', ({ strapi }) => (
       body: JSON.stringify(payload),
     });
   },
+
+  async getTransaction(transactionId: string) {
+    return this.request(`/TransaccionCompra/${encodeURIComponent(transactionId)}`);
+  },
 }));
