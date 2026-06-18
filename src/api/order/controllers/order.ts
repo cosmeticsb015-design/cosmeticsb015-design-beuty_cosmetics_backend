@@ -111,10 +111,40 @@ const getWompiNotificationEmails = (order: any) =>
 const getWompiErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Wompi payment link failed';
 
+const buildBackendWompiRedirectUrl = (publicBackendUrl: string) => {
+  try {
+    return new URL('/api/wompi/redirect', publicBackendUrl).toString();
+  } catch {
+    return '';
+  }
+};
+
+const looksLikeStorefrontThankYouUrl = (value: string) => {
+  try {
+    const parsed = new URL(value);
+    const thankYouPath = process.env.WOMPI_THANK_YOU_PATH || '/checkout/gracias-por-su-compra';
+    return parsed.pathname === thankYouPath || parsed.pathname === '/gracias-por-su-compra';
+  } catch {
+    return false;
+  }
+};
+
 // urlRedirect: la URL que Wompi llama PRIMERO al terminar el pago.
 // SIEMPRE debe ser el BACKEND, porque aquí es donde validamos el hash de Wompi
-// antes de reenviar al cliente al frontend.
-const getWompiCustomerRedirectUrl = () => requiredEnv('WOMPI_REDIRECT_URL');
+// antes de reenviar al cliente al frontend. Si WOMPI_REDIRECT_URL quedó apuntando
+// al storefront por compatibilidad, derivamos el redirect público desde el webhook
+// o desde WOMPI_BACKEND_URL para evitar enviar a Wompi directo al frontend.
+const getWompiCustomerRedirectUrl = () => {
+  const configuredRedirectUrl = requiredEnv('WOMPI_REDIRECT_URL').trim();
+
+  if (!looksLikeStorefrontThankYouUrl(configuredRedirectUrl)) return configuredRedirectUrl;
+
+  const backendRedirectUrl =
+    buildBackendWompiRedirectUrl(process.env.WOMPI_BACKEND_URL || '') ||
+    buildBackendWompiRedirectUrl(getWompiWebhookUrl());
+
+  return backendRedirectUrl || configuredRedirectUrl;
+};
 
 // Destino final para el cliente (FRONTEND), una vez que el backend valida la transacción
 // en wompiRedirect() y hace el ctx.redirect(...) hacia aquí.
