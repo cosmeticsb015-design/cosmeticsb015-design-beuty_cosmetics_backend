@@ -126,7 +126,9 @@ const getConfiguredWompiReturnUrl = () => {
   }
 };
 
-const getWompiCustomerRedirectUrl = () => getConfiguredWompiReturnUrl() || requiredEnv('WOMPI_REDIRECT_URL');
+const getWompiCustomerRedirectUrl = () => requiredEnv('WOMPI_REDIRECT_URL');
+
+const getWompiCustomerReturnUrl = () => getConfiguredWompiReturnUrl() || getWompiCustomerRedirectUrl();
 
 const buildWompiPaymentLinkPayload = (order: any) => {
   const commerceId = `ORDER-${order.tracking_number}`;
@@ -142,7 +144,7 @@ const buildWompiPaymentLinkPayload = (order: any) => {
     nombreProducto: `Orden ${order.tracking_number}`,
     configuracion: {
       urlRedirect: getWompiCustomerRedirectUrl(),
-      urlRetorno: getWompiCustomerRedirectUrl(),
+      urlRetorno: getWompiCustomerReturnUrl(),
       urlWebhook: getWompiWebhookUrl(),
       emailsNotificacion: getWompiNotificationEmails(order),
       notificarTransaccionCliente: true,

@@ -124,7 +124,7 @@ WOMPI_WEBHOOK_URL=https://compete-number-expand-kinda.trycloudflare.com/api/womp
 # WOMPI_THANK_YOU_PATH=/gracias-por-su-compra
 ```
 
-With this setup, Wompi sends the shopper back to the storefront redirect URL after finishing payment, while payment confirmation is handled by the Strapi webhook. Use the Strapi redirect endpoint only when you intentionally want Strapi to validate the redirect hash and then forward the shopper to `WOMPI_RETURN_URL`.
+With this setup, Wompi sends the shopper back to `WOMPI_REDIRECT_URL` after finishing payment. Keep this URL on the storefront `/api/payments/wompi/close` route so the frontend can run its close/thank-you flow. `WOMPI_RETURN_URL` is only the final storefront thank-you page used as Wompi's return URL/fallback; it should not replace `WOMPI_REDIRECT_URL` in the payment-link payload. Payment confirmation is handled by the Strapi webhook.
 
 ### Troubleshooting webhook 404 in the storefront terminal
 
