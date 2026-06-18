@@ -205,6 +205,77 @@ const buildWompiProductDescription = (order: any) => {
   return items.map(formatOrderItemLabel).join(' | ');
 };
 
+const publicOrderPopulate = {
+  items: {
+    populate: {
+      product: { populate: { images: { populate: { image: true } }, brand: true, category: true } },
+      variant: { populate: { images: { populate: { image: true } } } },
+    },
+  },
+  branch: true,
+  shipping_rate: true,
+};
+
+const getPublicAssetBaseUrl = () =>
+  (process.env.STRAPI_PUBLIC_URL || process.env.PUBLIC_URL || process.env.WOMPI_BACKEND_URL || '').replace(/\/$/, '');
+
+const normalizeMedia = (media: any) => {
+  if (!media?.url) return null;
+
+  const baseUrl = getPublicAssetBaseUrl();
+  const absoluteUrl = media.url.startsWith('http') || !baseUrl ? media.url : `${baseUrl}${media.url}`;
+
+  return {
+    url: media.url,
+    absolute_url: absoluteUrl,
+    alternativeText: media.alternativeText || null,
+    width: media.width || null,
+    height: media.height || null,
+    formats: media.formats || null,
+  };
+};
+
+const sortProductImages = (images: any[] = []) =>
+  [...images].sort((left, right) => Number(left.sort_order || 0) - Number(right.sort_order || 0));
+
+const getPrimaryOrderItemImage = (item: any) => {
+  const variantImage = sortProductImages(item.variant?.images).find((entry) => entry?.image)?.image;
+  if (variantImage) return normalizeMedia(variantImage);
+
+  const productImage = sortProductImages(item.product?.images).find((entry) => entry?.image)?.image;
+  return normalizeMedia(productImage);
+};
+
+const mapOrderItemForPublicResponse = (item: any) => {
+  const image = getPrimaryOrderItemImage(item);
+
+  return {
+    product_name: item.product_name,
+    variant_label: item.variant_label || null,
+    unit_price: Number(item.unit_price || 0),
+    quantity: Number(item.quantity || 0),
+    image,
+    image_url: image?.absolute_url || image?.url || null,
+    imageUrl: image?.absolute_url || image?.url || null,
+    thumbnail: image?.absolute_url || image?.url || null,
+    images: image ? [image] : [],
+    product: item.product
+      ? {
+          name: item.product.name,
+          slug: item.product.slug || null,
+          brand: item.product.brand ? { name: item.product.brand.name, slug: item.product.brand.slug || null } : null,
+          category: item.product.category ? { name: item.product.category.name, slug: item.product.category.slug || null } : null,
+        }
+      : null,
+    variant: item.variant
+      ? {
+          label: item.variant.label,
+          value: item.variant.value,
+        }
+      : null,
+  };
+};
+
 const buildWompiPaymentLinkPayload = (order: any) => {
   const commerceId = `ORDER-${order.tracking_number}`;
   const total = getOrderTotal(order);
@@ -317,7 +388,7 @@ const findOrderByDocumentId = async (strapi: any, documentId: string) => {
     return await strapi.documents('api::order.order').findOne({
       documentId,
       status: 'published',
-      populate: { items: true, branch: true, shipping_rate: true },
+      populate: publicOrderPopulate as any,
     });
   } catch {
     return null;
@@ -329,7 +400,7 @@ const findOrderByTrackingNumber = async (strapi: any, trackingNumber: string) =>
     filters: { tracking_number: trackingNumber },
     status: 'published',
     limit: 1,
-    populate: { items: true, branch: true, shipping_rate: true },
+    populate: publicOrderPopulate as any,
   });
 
   return orders[0];
@@ -426,7 +497,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
 
     const createdOrder = await strapi.documents('api::order.order').findOne({
       documentId: order.documentId,
-      populate: { items: true, branch: true, shipping_rate: true },
+      populate: publicOrderPopulate as any,
     });
 
     try {
@@ -553,12 +624,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
         total: Number((subtotal + shippingCost).toFixed(2)),
         branch: order.branch ? { name: order.branch.name, address: order.branch.address } : null,
         shipping_rate: order.shipping_rate ? { name: order.shipping_rate.name } : null,
-        items: (order.items || []).map((item: any) => ({
-          product_name: item.product_name,
-          variant_label: item.variant_label || null,
-          unit_price: Number(item.unit_price || 0),
-          quantity: Number(item.quantity || 0),
-        })),
+        items: (order.items || []).map(mapOrderItemForPublicResponse),
       },
     };
   },
