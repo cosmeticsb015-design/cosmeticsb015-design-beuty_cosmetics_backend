@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2026-06-10T17:09:42.368Z"
+    "x-generation-date": "2026-06-18T14:49:00.650Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -9037,6 +9037,18 @@
                                       }
                                     }
                                   },
+                                  "wompi_payment_link_id": {
+                                    "type": "integer"
+                                  },
+                                  "wompi_payment_link_url": {
+                                    "type": "string"
+                                  },
+                                  "wompi_payment_link_long_url": {
+                                    "type": "string"
+                                  },
+                                  "wompi_payment_link_qr_url": {
+                                    "type": "string"
+                                  },
                                   "createdAt": {
                                     "type": "string",
                                     "format": "date-time"
@@ -11936,6 +11948,18 @@
                                 }
                               }
                             },
+                            "wompi_payment_link_id": {
+                              "type": "integer"
+                            },
+                            "wompi_payment_link_url": {
+                              "type": "string"
+                            },
+                            "wompi_payment_link_long_url": {
+                              "type": "string"
+                            },
+                            "wompi_payment_link_qr_url": {
+                              "type": "string"
+                            },
                             "createdAt": {
                               "type": "string",
                               "format": "date-time"
@@ -14080,6 +14104,18 @@
                                             }
                                           }
                                         }
+                                      },
+                                      "wompi_payment_link_id": {
+                                        "type": "integer"
+                                      },
+                                      "wompi_payment_link_url": {
+                                        "type": "string"
+                                      },
+                                      "wompi_payment_link_long_url": {
+                                        "type": "string"
+                                      },
+                                      "wompi_payment_link_qr_url": {
+                                        "type": "string"
                                       },
                                       "createdAt": {
                                         "type": "string",
@@ -16780,6 +16816,18 @@
                                                 }
                                               }
                                             },
+                                            "wompi_payment_link_id": {
+                                              "type": "integer"
+                                            },
+                                            "wompi_payment_link_url": {
+                                              "type": "string"
+                                            },
+                                            "wompi_payment_link_long_url": {
+                                              "type": "string"
+                                            },
+                                            "wompi_payment_link_qr_url": {
+                                              "type": "string"
+                                            },
                                             "createdAt": {
                                               "type": "string",
                                               "format": "date-time"
@@ -18137,6 +18185,18 @@
                   ],
                   "example": "string or id"
                 }
+              },
+              "wompi_payment_link_id": {
+                "type": "integer"
+              },
+              "wompi_payment_link_url": {
+                "type": "string"
+              },
+              "wompi_payment_link_long_url": {
+                "type": "string"
+              },
+              "wompi_payment_link_qr_url": {
+                "type": "string"
               },
               "locale": {
                 "type": "string"
@@ -20186,6 +20246,18 @@
                                           }
                                         }
                                       },
+                                      "wompi_payment_link_id": {
+                                        "type": "integer"
+                                      },
+                                      "wompi_payment_link_url": {
+                                        "type": "string"
+                                      },
+                                      "wompi_payment_link_long_url": {
+                                        "type": "string"
+                                      },
+                                      "wompi_payment_link_qr_url": {
+                                        "type": "string"
+                                      },
                                       "createdAt": {
                                         "type": "string",
                                         "format": "date-time"
@@ -20847,6 +20919,18 @@
                 }
               }
             }
+          },
+          "wompi_payment_link_id": {
+            "type": "integer"
+          },
+          "wompi_payment_link_url": {
+            "type": "string"
+          },
+          "wompi_payment_link_long_url": {
+            "type": "string"
+          },
+          "wompi_payment_link_qr_url": {
+            "type": "string"
           },
           "createdAt": {
             "type": "string",
@@ -23562,6 +23646,18 @@
                   }
                 }
               },
+              "wompi_payment_link_id": {
+                "type": "integer"
+              },
+              "wompi_payment_link_url": {
+                "type": "string"
+              },
+              "wompi_payment_link_long_url": {
+                "type": "string"
+              },
+              "wompi_payment_link_qr_url": {
+                "type": "string"
+              },
               "createdAt": {
                 "type": "string",
                 "format": "date-time"
@@ -25372,6 +25468,18 @@
                                                 }
                                               }
                                             }
+                                          },
+                                          "wompi_payment_link_id": {
+                                            "type": "integer"
+                                          },
+                                          "wompi_payment_link_url": {
+                                            "type": "string"
+                                          },
+                                          "wompi_payment_link_long_url": {
+                                            "type": "string"
+                                          },
+                                          "wompi_payment_link_qr_url": {
+                                            "type": "string"
                                           },
                                           "createdAt": {
                                             "type": "string",
@@ -28281,6 +28389,18 @@
                                           }
                                         }
                                       }
+                                    },
+                                    "wompi_payment_link_id": {
+                                      "type": "integer"
+                                    },
+                                    "wompi_payment_link_url": {
+                                      "type": "string"
+                                    },
+                                    "wompi_payment_link_long_url": {
+                                      "type": "string"
+                                    },
+                                    "wompi_payment_link_qr_url": {
+                                      "type": "string"
                                     },
                                     "createdAt": {
                                       "type": "string",
@@ -32212,6 +32332,18 @@
                     }
                   }
                 },
+                "wompi_payment_link_id": {
+                  "type": "integer"
+                },
+                "wompi_payment_link_url": {
+                  "type": "string"
+                },
+                "wompi_payment_link_long_url": {
+                  "type": "string"
+                },
+                "wompi_payment_link_qr_url": {
+                  "type": "string"
+                },
                 "createdAt": {
                   "type": "string",
                   "format": "date-time"
@@ -34929,6 +35061,18 @@
                                           }
                                         }
                                       }
+                                    },
+                                    "wompi_payment_link_id": {
+                                      "type": "integer"
+                                    },
+                                    "wompi_payment_link_url": {
+                                      "type": "string"
+                                    },
+                                    "wompi_payment_link_long_url": {
+                                      "type": "string"
+                                    },
+                                    "wompi_payment_link_qr_url": {
+                                      "type": "string"
                                     },
                                     "createdAt": {
                                       "type": "string",

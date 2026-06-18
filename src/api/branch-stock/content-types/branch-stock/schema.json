@@ -7,7 +7,7 @@
     "displayName": "Branch Stock"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {

@@ -448,7 +448,7 @@ export interface ApiBranchStockBranchStock extends Struct.CollectionTypeSchema {
     singularName: 'branch-stock';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     branch: Schema.Attribute.Relation<'manyToOne', 'api::branch.branch'>;
@@ -487,7 +487,7 @@ export interface ApiBranchBranch extends Struct.CollectionTypeSchema {
     singularName: 'branch';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
@@ -524,7 +524,7 @@ export interface ApiBrandBrand extends Struct.CollectionTypeSchema {
     singularName: 'brand';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
@@ -554,7 +554,7 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
     singularName: 'category';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
@@ -589,7 +589,7 @@ export interface ApiOrderItemOrderItem extends Struct.CollectionTypeSchema {
     singularName: 'order-item';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     branch_stock: Schema.Attribute.Relation<
@@ -630,7 +630,7 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
     singularName: 'order';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     address: Schema.Attribute.String;
@@ -665,6 +665,10 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    wompi_payment_link_id: Schema.Attribute.Integer;
+    wompi_payment_link_long_url: Schema.Attribute.String;
+    wompi_payment_link_qr_url: Schema.Attribute.String;
+    wompi_payment_link_url: Schema.Attribute.String;
     wompi_transaction_id: Schema.Attribute.String;
   };
 }
@@ -678,7 +682,7 @@ export interface ApiProductImageProductImage
     singularName: 'product-image';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -712,7 +716,7 @@ export interface ApiProductProduct extends Struct.CollectionTypeSchema {
     singularName: 'product';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
@@ -757,7 +761,7 @@ export interface ApiShippingRateShippingRate
     singularName: 'shipping-rate';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
@@ -789,7 +793,7 @@ export interface ApiStoreConfigStoreConfig extends Struct.SingleTypeSchema {
     singularName: 'store-config';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -819,7 +823,7 @@ export interface ApiVariantOptionVariantOption
     singularName: 'variant-option';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;

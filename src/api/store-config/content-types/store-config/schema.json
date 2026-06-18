@@ -7,7 +7,7 @@
     "displayName": "Store Config"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {

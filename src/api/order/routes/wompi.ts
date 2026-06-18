@@ -48,5 +48,11 @@ export default {
       handler: 'order.wompiRedirect',
       config: { auth: false },
     },
+    {
+      method: 'GET',
+      path: '/orders/public/:identifier',
+      handler: 'order.findPublic',
+      config: { auth: false },
+    },
   ],
 };

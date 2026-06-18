@@ -7,7 +7,7 @@
     "displayName": "Product Image"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {

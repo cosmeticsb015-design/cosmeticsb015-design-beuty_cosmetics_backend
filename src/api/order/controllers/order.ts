@@ -111,6 +111,13 @@ const getWompiNotificationEmails = (order: any) =>
 const getWompiErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Wompi payment link failed';
 
+// urlRedirect: la URL que Wompi llama PRIMERO al terminar el pago.
+// SIEMPRE debe ser el BACKEND, porque aquí es donde validamos el hash de Wompi
+// antes de reenviar al cliente al frontend.
+const getWompiCustomerRedirectUrl = () => requiredEnv('WOMPI_REDIRECT_URL');
+
+// Destino final para el cliente (FRONTEND), una vez que el backend valida la transacción
+// en wompiRedirect() y hace el ctx.redirect(...) hacia aquí.
 const getConfiguredWompiReturnUrl = () => {
   const returnUrl = (process.env.WOMPI_RETURN_URL || '').trim();
   if (returnUrl) return returnUrl;
@@ -126,9 +133,34 @@ const getConfiguredWompiReturnUrl = () => {
   }
 };
 
-const getWompiCustomerRedirectUrl = () => getConfiguredWompiReturnUrl() || requiredEnv('WOMPI_REDIRECT_URL');
-
 const getWompiCustomerReturnUrl = () => getConfiguredWompiReturnUrl() || getWompiCustomerRedirectUrl();
+
+// Wompi's "Enlace de Pago" no soporta una lista de items: solo nombreProducto (string)
+// e infoProducto.descripcionProducto (string). Construimos ambos a partir de los
+// order-items reales en vez de usar solo el tracking number.
+const WOMPI_PRODUCT_NAME_MAX_LENGTH = 120;
+
+const formatOrderItemLabel = (item: any) => {
+  const variant = item.variant_label ? ` (${item.variant_label})` : '';
+  return `${item.product_name}${variant} x${item.quantity}`;
+};
+
+const buildWompiProductName = (order: any) => {
+  const items = Array.isArray(order.items) ? order.items : [];
+  if (items.length === 0) return `Orden ${order.tracking_number}`;
+
+  const joined = items.map(formatOrderItemLabel).join(', ');
+  if (joined.length <= WOMPI_PRODUCT_NAME_MAX_LENGTH) return joined;
+
+  return `${joined.slice(0, WOMPI_PRODUCT_NAME_MAX_LENGTH - 1)}…`;
+};
+
+const buildWompiProductDescription = (order: any) => {
+  const items = Array.isArray(order.items) ? order.items : [];
+  if (items.length === 0) return `Orden ${order.tracking_number}`;
+
+  return items.map(formatOrderItemLabel).join(' | ');
+};
 
 const buildWompiPaymentLinkPayload = (order: any) => {
   const commerceId = `ORDER-${order.tracking_number}`;
@@ -141,7 +173,10 @@ const buildWompiPaymentLinkPayload = (order: any) => {
   return {
     identificadorEnlaceComercio: commerceId,
     monto: Number(total.toFixed(2)),
-    nombreProducto: `Orden ${order.tracking_number}`,
+    nombreProducto: buildWompiProductName(order),
+    infoProducto: {
+      descripcionProducto: buildWompiProductDescription(order),
+    },
     configuracion: {
       urlRedirect: getWompiCustomerRedirectUrl(),
       urlRetorno: getWompiCustomerReturnUrl(),
@@ -217,6 +252,29 @@ const findOrderByCommerceId = async (strapi: any, commerceId: string) => {
   return orders[0];
 };
 
+const findOrderByDocumentId = async (strapi: any, documentId: string) => {
+  try {
+    return await strapi.documents('api::order.order').findOne({
+      documentId,
+      status: 'published',
+      populate: { items: true, branch: true, shipping_rate: true },
+    });
+  } catch {
+    return null;
+  }
+};
+
+const findOrderByTrackingNumber = async (strapi: any, trackingNumber: string) => {
+  const orders = await strapi.documents('api::order.order').findMany({
+    filters: { tracking_number: trackingNumber },
+    status: 'published',
+    limit: 1,
+    populate: { items: true, branch: true, shipping_rate: true },
+  });
+
+  return orders[0];
+};
+
 export default factories.createCoreController('api::order.order', ({ strapi }) => ({
   async create(ctx) {
     const payload = ctx.request.body?.data || ctx.request.body || {};
@@ -233,6 +291,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
     for (const item of inputItems) {
       const stock = await strapi.documents('api::branch-stock.branch-stock').findOne({
         documentId: item.branch_stock,
+        status: 'published',
         populate: {
           branch: true,
           variant: { populate: { product: true } },
@@ -404,6 +463,42 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
         payment_status: order.payment_status,
         transaction_id: query.idTransaccion,
         approved: asBoolean(query.esAprobada),
+      },
+    };
+  },
+
+  async findPublic(ctx) {
+    const identifier = String(ctx.params.identifier || '').trim();
+    if (!identifier) return ctx.badRequest('Order identifier is required');
+
+    const order =
+      (await findOrderByDocumentId(strapi, identifier)) ||
+      (await findOrderByTrackingNumber(strapi, identifier));
+
+    if (!order) return ctx.notFound('Order not found');
+
+    const subtotal = Number(order.subtotal || 0);
+    const shippingCost = Number(order.shipping_cost || 0);
+
+    ctx.body = {
+      data: {
+        tracking_number: order.tracking_number,
+        payment_status: order.payment_status,
+        customer_name: order.customer_name,
+        customer_email: order.customer_email,
+        delivery_type: order.delivery_type,
+        address: order.address || null,
+        subtotal,
+        shipping_cost: shippingCost,
+        total: Number((subtotal + shippingCost).toFixed(2)),
+        branch: order.branch ? { name: order.branch.name, address: order.branch.address } : null,
+        shipping_rate: order.shipping_rate ? { name: order.shipping_rate.name } : null,
+        items: (order.items || []).map((item: any) => ({
+          product_name: item.product_name,
+          variant_label: item.variant_label || null,
+          unit_price: Number(item.unit_price || 0),
+          quantity: Number(item.quantity || 0),
+        })),
       },
     };
   },
