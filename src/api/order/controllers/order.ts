@@ -647,6 +647,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       documentId: order.documentId,
       data: {
         payment_status: paid ? 'paid' : 'failed',
+        wompi_payment_status: paid ? 'paid' : 'failed',
         wompi_transaction_id: String(transactionId),
         wompi_transaction_status: getWompiResultLabel(payload.ResultadoTransaccion || payload.resultadoTransaccion),
         wompi_transaction_message: payload.Mensaje || payload.mensaje || '',
@@ -686,6 +687,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       documentId: order.documentId,
       data: {
         payment_status: redirectPaymentStatus,
+        wompi_payment_status: redirectPaymentStatus,
         wompi_transaction_id: transactionDetails.wompi_transaction_id || transactionId,
         wompi_transaction_status: transactionDetails.wompi_transaction_status,
         wompi_transaction_message: transactionDetails.wompi_transaction_message,
@@ -726,11 +728,16 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
 
     const subtotal = Number(order.subtotal || 0);
     const shippingCost = Number(order.shipping_cost || 0);
+    const publicPaymentStatus =
+      order.wompi_payment_status ||
+      (String(order.wompi_transaction_status || '').toLowerCase() === 'exitosaaprobada' ? 'paid' : order.payment_status);
 
     ctx.body = {
       data: {
         tracking_number: order.tracking_number,
-        payment_status: order.payment_status,
+        payment_status: publicPaymentStatus,
+        internal_payment_status: order.payment_status,
+        wompi_payment_status: order.wompi_payment_status || null,
         wompi_transaction_id: order.wompi_transaction_id || null,
         wompi_transaction_status: order.wompi_transaction_status || null,
         wompi_transaction_message: order.wompi_transaction_message || null,

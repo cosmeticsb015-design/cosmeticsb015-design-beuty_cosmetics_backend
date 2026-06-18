@@ -58,6 +58,15 @@
         "refunded"
       ]
     },
+    "wompi_payment_status": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "paid",
+        "failed",
+        "refunded"
+      ]
+    },
     "wompi_transaction_id": {
       "type": "string"
     },
