@@ -107,7 +107,7 @@ type OrderItemInput = {
   quantity?: number;
 };
 
-const generateTrackingNumber = () => `BC-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+const generateTrackingNumber = () => `BC-${crypto.randomBytes(12).toString('hex').toUpperCase()}`;
 
 const defaultExpiresAt = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
@@ -535,6 +535,47 @@ const respondWithExistingCheckoutAttempt = async (ctx: any, strapi: any, order: 
   ctx.body = { data: { ...order, wompi_payment: wompiPayment, idempotent_replay: true } };
 };
 
+type StockReservation = {
+  branchStockId: number;
+  documentId: string;
+  quantity: number;
+};
+
+const decrementStockAtomically = async (strapi: any, stock: any, quantity: number) => {
+  const affectedRows = await strapi.db
+    .connection('branch_stocks')
+    .where({ id: stock.id })
+    .where('quantity', '>=', quantity)
+    .decrement('quantity', quantity);
+
+  if (Number(affectedRows) === 0) {
+    throw new Error(`Insufficient stock for ${stock.variant?.label || stock.documentId}`);
+  }
+};
+
+const releaseStockReservations = async (strapi: any, reservations: StockReservation[]) => {
+  await Promise.all(
+    reservations.map((reservation) =>
+      strapi.db
+        .connection('branch_stocks')
+        .where({ id: reservation.branchStockId })
+        .increment('quantity', reservation.quantity),
+    ),
+  );
+};
+
+const markOrderPaymentFailed = async (strapi: any, order: any) => {
+  await strapi.documents('api::order.order').update({
+    documentId: order.documentId,
+    data: {
+      payment_status: 'failed',
+      internal_payment_status: 'failed',
+      wompi_payment_status: 'failed',
+    },
+    status: 'published',
+  });
+};
+
 export default factories.createCoreController('api::order.order', ({ strapi }) => ({
   async create(ctx) {
     const payload = ctx.request.body?.data || ctx.request.body || {};
@@ -598,7 +639,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
     try {
       order = await strapi.documents('api::order.order').create({
         data: {
-          tracking_number: payload.tracking_number || generateTrackingNumber(),
+          tracking_number: generateTrackingNumber(),
           checkout_attempt_id: checkoutAttemptId,
           customer_name: payload.customer_name,
           customer_email: payload.customer_email,
@@ -630,12 +671,21 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       throw error;
     }
 
+    const stockReservations: StockReservation[] = [];
+
     for (const item of orderItems) {
-      await strapi.documents('api::branch-stock.branch-stock').update({
-        documentId: item.stock.documentId,
-        data: { quantity: Number(item.stock.quantity || 0) - item.quantity },
-        status: 'published',
-      });
+      try {
+        await decrementStockAtomically(strapi, item.stock, item.quantity);
+        stockReservations.push({
+          branchStockId: item.stock.id,
+          documentId: item.stock.documentId,
+          quantity: item.quantity,
+        });
+      } catch (error) {
+        await releaseStockReservations(strapi, stockReservations);
+        await markOrderPaymentFailed(strapi, order);
+        return ctx.badRequest(error instanceof Error ? error.message : 'Insufficient stock');
+      }
 
       await strapi.documents('api::order-item.order-item').create({
         data: {
@@ -662,6 +712,8 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       ctx.status = 201;
       ctx.body = { data: { ...createdOrder, wompi_payment: wompiPayment } };
     } catch (error) {
+      await releaseStockReservations(strapi, stockReservations);
+      await markOrderPaymentFailed(strapi, order);
       const message = getWompiErrorMessage(error);
       strapi.log.error('Unable to create Wompi payment link for checkout order', error);
       return ctx.internalServerError(`No se pudo crear el enlace de pago de Wompi para la orden: ${message}`);
@@ -676,6 +728,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
 
     if (!order) return ctx.notFound('Order not found');
     if (order.payment_status === 'paid') return ctx.badRequest('Order is already paid');
+    if (isPublicOrderAccessExpired(order)) return ctx.badRequest('Order payment link has expired');
 
     try {
       const wompiPayment = await attachWompiPaymentLink(strapi, order);
@@ -695,6 +748,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
     const bodyForHash = Buffer.isBuffer(rawBody) ? rawBody.toString('utf8') : String(rawBody || '');
 
     if (!providedHash || !bodyForHash || !safeCompare(hmacSha256(bodyForHash, secret), providedHash)) {
+      strapi.log.warn(`Invalid Wompi webhook signature from ${ctx.ip || ctx.request.ip || 'unknown'}`);
       return ctx.unauthorized('Invalid Wompi webhook signature');
     }
 
@@ -742,6 +796,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
     ].map((value) => String(value ?? '')).join('');
 
     if (!providedHash || !safeCompare(hmacSha256(base, secret), providedHash)) {
+      strapi.log.warn(`Invalid Wompi redirect signature from ${ctx.ip || ctx.request.ip || 'unknown'}`);
       return ctx.unauthorized('Invalid Wompi redirect signature');
     }
 
