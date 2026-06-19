@@ -4,7 +4,8 @@
   "info": {
     "singularName": "store-config",
     "pluralName": "store-configs",
-    "displayName": "Store Config"
+    "displayName": "Store Config",
+    "description": "Configuración general de la tienda, datos de contacto y banners del home"
   },
   "options": {
     "draftAndPublish": false
@@ -16,6 +17,11 @@
     },
     "notification_email": {
       "type": "email"
+    },
+    "home_banners": {
+      "type": "component",
+      "repeatable": true,
+      "component": "store.home-banner"
     }
   }
 }

@@ -824,6 +824,7 @@ export interface ApiStoreConfigStoreConfig extends Struct.SingleTypeSchema {
       'api::store-config.store-config'
     > &
       Schema.Attribute.Private;
+    home_banners: Schema.Attribute.Component<'store.home-banner', true>;
     notification_email: Schema.Attribute.Email;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
