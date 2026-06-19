@@ -150,6 +150,10 @@
     },
     "wompi_payment_link_qr_url": {
       "type": "string"
+    },
+    "status_email_sent": {
+      "type": "json",
+      "private": true
     }
   }
 }

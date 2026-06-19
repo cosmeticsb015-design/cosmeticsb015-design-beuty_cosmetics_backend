@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Beauty Cosmetics</title>
+  <desc id="desc">Logo circular rosado de Beauty Cosmetics con monograma BC.</desc>
+  <circle cx="256" cy="256" r="248" fill="#cf527d" stroke="#fff7d9" stroke-width="8"/>
+  <text x="256" y="122" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="56" letter-spacing="18" fill="#fff7d9">BEAUTY</text>
+  <text x="108" y="252" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="48" font-weight="300" fill="#3f3148">EST</text>
+  <text x="404" y="252" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="48" font-weight="300" fill="#3f3148">2019</text>
+  <text x="256" y="318" text-anchor="middle" font-family="Georgia, serif" font-size="172" font-weight="700" fill="#fff7d9">Bc</text>
+  <text x="256" y="438" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="42" letter-spacing="20" fill="#fff7d9">COSMETICS</text>
+</svg>

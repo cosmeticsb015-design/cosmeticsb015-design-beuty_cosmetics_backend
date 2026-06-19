@@ -709,6 +709,13 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
 
     try {
       const wompiPayment = await attachWompiPaymentLink(strapi, createdOrder);
+
+      try {
+        await strapi.service('api::order.order-email').sendNewOrderAdminEmailOnce(createdOrder.documentId);
+      } catch (emailError) {
+        strapi.log.warn(`Unable to send new order notification email: ${emailError instanceof Error ? emailError.message : emailError}`);
+      }
+
       ctx.status = 201;
       ctx.body = { data: { ...createdOrder, wompi_payment: wompiPayment } };
     } catch (error) {
