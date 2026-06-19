@@ -70,7 +70,7 @@ const buildNewOrderAdminEmail = (order: any) => {
   const subtotal = Number(order.subtotal || 0);
   const shipping = Number(order.shipping_cost || 0);
   const total = Number(order.total || subtotal + shipping);
-  const subject = `Nuevo pedido ${order.tracking_number} en Beauty Cosmetics`;
+  const subject = `Nuevo pedido pagado ${order.tracking_number} en Beauty Cosmetics`;
   const logoHtml = `<img src="${escapeHtml(logoUrl)}" alt="Beauty Cosmetics" width="96" style="display:block;margin:0 auto 16px;border-radius:999px;" />`;
 
   const html = `<!doctype html>
@@ -80,11 +80,11 @@ const buildNewOrderAdminEmail = (order: any) => {
       <div style="background:#ffffff;border:1px solid #f3d6df;border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(207,82,125,.12);">
         <div style="background:#cf527d;padding:28px;text-align:center;color:#fff7d9;">
           ${logoHtml}
-          <h1 style="margin:0;font-size:26px;">Nuevo pedido</h1>
+          <h1 style="margin:0;font-size:26px;">Nuevo pedido pagado</h1>
           <p style="margin:10px 0 0;font-size:15px;color:#fff7d9;">Pedido ${escapeHtml(order.tracking_number)}</p>
         </div>
         <div style="padding:28px;">
-          <p style="font-size:16px;line-height:1.55;margin:0 0 22px;">Se creó un nuevo pedido en Beauty Cosmetics. Revisa el detalle para coordinar pago, preparación y entrega.</p>
+          <p style="font-size:16px;line-height:1.55;margin:0 0 22px;">Se confirmó el pago de un nuevo pedido en Beauty Cosmetics. Revisa el detalle para coordinar preparación y entrega.</p>
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:20px 0;border:1px solid #f3d6df;border-radius:14px;overflow:hidden;">
             <thead><tr style="background:#fff0f5;color:#99405f;"><th align="left" style="padding:12px;">Producto</th><th style="padding:12px;">Cant.</th><th align="right" style="padding:12px;">Precio</th><th align="right" style="padding:12px;">Total</th></tr></thead>
             <tbody>${buildItemsRows(order.items || [])}</tbody>
@@ -107,7 +107,7 @@ const buildNewOrderAdminEmail = (order: any) => {
   </body>
 </html>`;
 
-  const text = `Nuevo pedido ${order.tracking_number}
+  const text = `Nuevo pedido pagado ${order.tracking_number}
 
 Cliente: ${order.customer_name} <${order.customer_email}>
 Teléfono: ${order.customer_phone || ''}

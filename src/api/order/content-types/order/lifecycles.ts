@@ -44,6 +44,14 @@ export default {
 
     if (!statusChanged && !paymentJustBecamePaid) return;
 
+    if (paymentJustBecamePaid) {
+      try {
+        await strapi.service('api::order.order-email').sendNewOrderAdminEmailOnce(order.documentId);
+      } catch (emailError) {
+        strapi.log.warn(`Unable to send paid order notification email: ${emailError instanceof Error ? emailError.message : emailError}`);
+      }
+    }
+
     await strapi.service('api::order.order-email').sendOrderStatusEmailOnce(order.documentId, currentStatus);
   },
 };
