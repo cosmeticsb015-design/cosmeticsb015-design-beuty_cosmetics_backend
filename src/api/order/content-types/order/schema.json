@@ -16,6 +16,11 @@
       "required": true,
       "unique": true
     },
+    "checkout_attempt_id": {
+      "type": "string",
+      "unique": true,
+      "private": true
+    },
     "customer_name": {
       "type": "string",
       "required": true
