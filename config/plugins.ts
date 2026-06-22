@@ -3,6 +3,12 @@ import type { Core } from '@strapi/strapi';
 const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin => {
   const mailer = env('MAIL_MAILER', env('EMAIL_PROVIDER', 'nodemailer'));
   const useMailjet = mailer === 'mailjet';
+  const smtpUsername = env('SMTP_USERNAME', env('MAIL_USERNAME'));
+  const smtpPassword = env('SMTP_PASSWORD', env('MAIL_PASSWORD'));
+  const smtpSecure = env.bool(
+    'SMTP_SECURE',
+    env.bool('MAIL_SECURE', env('MAIL_ENCRYPTION', '').toLowerCase() === 'ssl')
+  );
 
   return {
     'admin-2fa': {
@@ -31,14 +37,14 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
             nodemailer: {
               provider: 'nodemailer',
               providerOptions: {
-                host: env('MAIL_HOST', '127.0.0.1'),
-                port: env.int('MAIL_PORT', 1025),
-                secure: env.bool('MAIL_ENCRYPTION', false),
+                host: env('SMTP_HOST', env('MAIL_HOST', 'smtp.hostinger.com')),
+                port: env.int('SMTP_PORT', env.int('MAIL_PORT', 465)),
+                secure: smtpSecure,
                 auth:
-                  env('MAIL_USERNAME') || env('MAIL_PASSWORD')
+                  smtpUsername || smtpPassword
                     ? {
-                        user: env('MAIL_USERNAME'),
-                        pass: env('MAIL_PASSWORD'),
+                        user: smtpUsername,
+                        pass: smtpPassword,
                       }
                     : undefined,
               },
