@@ -672,6 +672,7 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
       'manyToOne',
       'api::shipping-rate.shipping-rate'
     >;
+    status_email_sent: Schema.Attribute.JSON & Schema.Attribute.Private;
     subtotal: Schema.Attribute.Decimal & Schema.Attribute.Required;
     total: Schema.Attribute.Decimal;
     tracking_number: Schema.Attribute.String &
@@ -810,6 +811,7 @@ export interface ApiShippingRateShippingRate
 export interface ApiStoreConfigStoreConfig extends Struct.SingleTypeSchema {
   collectionName: 'store_configs';
   info: {
+    description: 'Configuraci\u00F3n general de la tienda, datos de contacto y banners del home';
     displayName: 'Store Config';
     pluralName: 'store-configs';
     singularName: 'store-config';
@@ -821,13 +823,13 @@ export interface ApiStoreConfigStoreConfig extends Struct.SingleTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    home_banners: Schema.Attribute.Component<'store.home-banner', true>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::store-config.store-config'
     > &
       Schema.Attribute.Private;
-    home_banners: Schema.Attribute.Component<'store.home-banner', true>;
     notification_email: Schema.Attribute.Email;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;

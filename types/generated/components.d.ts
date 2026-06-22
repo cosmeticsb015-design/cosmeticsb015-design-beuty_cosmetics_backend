@@ -15,7 +15,14 @@ export interface StoreHomeBanner extends Struct.ComponentSchema {
     > &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'desktop_and_mobile'>;
-    home_position: Schema.Attribute.Integer & Schema.Attribute.Required;
+    home_position: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      >;
     mobile_image: Schema.Attribute.Media<'images'>;
     name: Schema.Attribute.String & Schema.Attribute.Required;
   };
