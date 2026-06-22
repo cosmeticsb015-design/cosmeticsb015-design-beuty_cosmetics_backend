@@ -566,12 +566,12 @@ type StockReservation = {
   quantity: number;
 };
 
-const decrementStockAtomically = async (strapi: any, stock: any, quantity: number) => {
+const reserveStockAtomically = async (strapi: any, stock: any, quantity: number) => {
   const affectedRows = await strapi.db
     .connection('branch_stocks')
     .where({ id: stock.id })
-    .where('quantity', '>=', quantity)
-    .decrement('quantity', quantity);
+    .whereRaw('COALESCE(quantity, 0) - COALESCE(reserved, 0) >= ?', [quantity])
+    .increment('reserved', quantity);
 
   if (Number(affectedRows) === 0) {
     throw new Error(`Insufficient stock for ${stock.variant?.label || stock.documentId}`);
@@ -584,18 +584,76 @@ const releaseStockReservations = async (strapi: any, reservations: StockReservat
       strapi.db
         .connection('branch_stocks')
         .where({ id: reservation.branchStockId })
-        .increment('quantity', reservation.quantity),
+        .where('reserved', '>=', reservation.quantity)
+        .decrement('reserved', reservation.quantity),
     ),
   );
 };
 
+const getOrderStockReservations = async (strapi: any, order: any): Promise<StockReservation[]> => {
+  const orderWithItems = await strapi.documents('api::order.order').findOne({
+    documentId: order.documentId,
+    populate: { items: { populate: { branch_stock: true } } },
+  });
+
+  return (orderWithItems?.items || [])
+    .map((item: any) => ({
+      branchStockId: item.branch_stock?.id,
+      documentId: item.branch_stock?.documentId,
+      quantity: Number(item.quantity || 0),
+    }))
+    .filter((reservation: StockReservation) => reservation.branchStockId && reservation.documentId && reservation.quantity > 0);
+};
+
+const commitStockReservations = async (strapi: any, reservations: StockReservation[]) => {
+  for (const reservation of reservations) {
+    const affectedRows = await strapi.db
+      .connection('branch_stocks')
+      .where({ id: reservation.branchStockId })
+      .where('reserved', '>=', reservation.quantity)
+      .where('quantity', '>=', reservation.quantity)
+      .decrement({
+        reserved: reservation.quantity,
+        quantity: reservation.quantity,
+      });
+
+    if (Number(affectedRows) === 0) {
+      throw new Error(`Reserved stock is not available for ${reservation.documentId}`);
+    }
+  }
+};
+
+const finalizeStockForPaymentStatus = async (strapi: any, order: any, paymentStatus: 'pending' | 'paid' | 'failed') => {
+  if (paymentStatus === 'pending' || order.stock_released || !order.id) return {};
+
+  const claimedRows = await strapi.db
+    .connection('orders')
+    .where({ id: order.id })
+    .where((builder: any) => builder.where({ stock_released: false }).orWhereNull('stock_released'))
+    .update({ stock_released: true });
+
+  if (Number(claimedRows) === 0) return {};
+
+  const reservations = await getOrderStockReservations(strapi, order);
+  if (paymentStatus === 'paid') {
+    await commitStockReservations(strapi, reservations);
+  } else {
+    await releaseStockReservations(strapi, reservations);
+  }
+
+  return {};
+};
+
 const markOrderPaymentFailed = async (strapi: any, order: any) => {
+  const stockUpdate = await finalizeStockForPaymentStatus(strapi, order, 'failed');
+
   await strapi.documents('api::order.order').update({
     documentId: order.documentId,
     data: {
       payment_status: 'failed',
       internal_payment_status: 'failed',
       wompi_payment_status: 'failed',
+      ...stockUpdate,
     },
     status: 'published',
   });
@@ -634,7 +692,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       });
 
       if (!stock) return ctx.badRequest(`Branch stock ${item.branch_stock} was not found`);
-      const available = Number(stock.quantity || 0);
+      const available = Number(stock.quantity || 0) - Number(stock.reserved || 0);
 
       if (available < Number(item.quantity)) {
         return ctx.badRequest(`Insufficient stock for ${stock.variant?.label || item.branch_stock}`);
@@ -680,6 +738,8 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
           internal_payment_status: 'pending',
           wompi_payment_status: 'pending',
           expires_at: payload.expires_at || defaultExpiresAt(),
+          payment_reservation_expires_at: payload.expires_at || defaultExpiresAt(),
+          stock_released: false,
           branch: branchDocumentId,
           shipping_rate: getRelationDocumentId(payload.shipping_rate),
         },
@@ -700,7 +760,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
 
     for (const item of orderItems) {
       try {
-        await decrementStockAtomically(strapi, item.stock, item.quantity);
+        await reserveStockAtomically(strapi, item.stock, item.quantity);
         stockReservations.push({
           branchStockId: item.stock.id,
           documentId: item.stock.documentId,
@@ -708,7 +768,12 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
         });
       } catch (error) {
         await releaseStockReservations(strapi, stockReservations);
-        await markOrderPaymentFailed(strapi, order);
+        await strapi.documents('api::order.order').update({
+          documentId: order.documentId,
+          data: { stock_released: true } as any,
+          status: 'published',
+        });
+        await markOrderPaymentFailed(strapi, { ...order, stock_released: true });
         return ctx.badRequest(error instanceof Error ? error.message : 'Insufficient stock');
       }
 
@@ -738,7 +803,12 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       ctx.body = { data: { ...createdOrder, wompi_payment: wompiPayment } };
     } catch (error) {
       await releaseStockReservations(strapi, stockReservations);
-      await markOrderPaymentFailed(strapi, order);
+      await strapi.documents('api::order.order').update({
+        documentId: order.documentId,
+        data: { stock_released: true } as any,
+        status: 'published',
+      });
+      await markOrderPaymentFailed(strapi, { ...order, stock_released: true });
       const message = getWompiErrorMessage(error);
       strapi.log.error('Unable to create Wompi payment link for checkout order', error);
       return ctx.internalServerError(`No se pudo crear el enlace de pago de Wompi para la orden: ${message}`);
@@ -791,17 +861,21 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
     const receivedTotal = asNumber(payload.Monto || payload.monto);
     const paid = isApproved && Math.abs(expectedTotal - receivedTotal) < 0.01;
 
+    const webhookPaymentStatus = paid ? 'paid' : 'failed';
+    const webhookStockUpdate = await finalizeStockForPaymentStatus(strapi, order, webhookPaymentStatus);
+
     await strapi.documents('api::order.order').update({
       documentId: order.documentId,
       data: {
-        payment_status: paid ? 'paid' : 'failed',
-        internal_payment_status: paid ? 'paid' : 'failed',
-        wompi_payment_status: paid ? 'paid' : 'failed',
+        payment_status: webhookPaymentStatus,
+        internal_payment_status: webhookPaymentStatus,
+        wompi_payment_status: webhookPaymentStatus,
         wompi_transaction_id: String(transactionId),
         wompi_transaction_status: getWompiResultLabel(payload.ResultadoTransaccion || payload.resultadoTransaccion),
         wompi_transaction_message: payload.Mensaje || payload.mensaje || '',
         wompi_authorization_code: payload.CodigoAutorizacion || payload.codigoAutorizacion || '',
         wompi_payment_method: getWompiPaymentMethodLabel(payload.FormaPago || payload.formaPago || payload.FormaPagoUtilizada || payload.formaPagoUtilizada),
+        ...webhookStockUpdate,
       },
       status: 'published',
     });
@@ -833,6 +907,8 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
     const redirectPaymentStatus = getPaymentStatusFromWompiTransaction(transaction, getPaymentStatusFromWompiRedirect(query));
     const transactionDetails = normalizeWompiTransactionDetails(transaction || {});
 
+    const redirectStockUpdate = await finalizeStockForPaymentStatus(strapi, order, redirectPaymentStatus);
+
     await strapi.documents('api::order.order').update({
       documentId: order.documentId,
       data: {
@@ -844,6 +920,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
         wompi_transaction_message: transactionDetails.wompi_transaction_message,
         wompi_authorization_code: transactionDetails.wompi_authorization_code,
         wompi_payment_method: transactionDetails.wompi_payment_method,
+        ...redirectStockUpdate,
       },
       status: 'published',
     });
