@@ -154,6 +154,15 @@
     "status_email_sent": {
       "type": "json",
       "private": true
+    },
+    "payment_reservation_expires_at": {
+      "type": "datetime",
+      "private": true
+    },
+    "stock_released": {
+      "type": "boolean",
+      "default": false,
+      "private": true
     }
   }
 }
