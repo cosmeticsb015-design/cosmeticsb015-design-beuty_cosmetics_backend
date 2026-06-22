@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2026-06-10T17:09:42.368Z"
+    "x-generation-date": "2026-06-22T12:28:30.554Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -8701,6 +8701,9 @@
                                   "tracking_number": {
                                     "type": "string"
                                   },
+                                  "checkout_attempt_id": {
+                                    "type": "string"
+                                  },
                                   "customer_name": {
                                     "type": "string"
                                   },
@@ -8729,6 +8732,26 @@
                                     "type": "number",
                                     "format": "float"
                                   },
+                                  "total": {
+                                    "type": "number",
+                                    "format": "float"
+                                  },
+                                  "order_status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pending_shipping",
+                                      "shipped",
+                                      "delivered"
+                                    ]
+                                  },
+                                  "fulfillment_status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pending_shipping",
+                                      "shipped",
+                                      "delivered"
+                                    ]
+                                  },
                                   "payment_status": {
                                     "type": "string",
                                     "enum": [
@@ -8738,7 +8761,37 @@
                                       "refunded"
                                     ]
                                   },
+                                  "internal_payment_status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pending",
+                                      "paid",
+                                      "failed",
+                                      "refunded"
+                                    ]
+                                  },
+                                  "wompi_payment_status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pending",
+                                      "paid",
+                                      "failed",
+                                      "refunded"
+                                    ]
+                                  },
                                   "wompi_transaction_id": {
+                                    "type": "string"
+                                  },
+                                  "wompi_transaction_status": {
+                                    "type": "string"
+                                  },
+                                  "wompi_transaction_message": {
+                                    "type": "string"
+                                  },
+                                  "wompi_authorization_code": {
+                                    "type": "string"
+                                  },
+                                  "wompi_payment_method": {
                                     "type": "string"
                                   },
                                   "expires_at": {
@@ -9037,6 +9090,19 @@
                                       }
                                     }
                                   },
+                                  "wompi_payment_link_id": {
+                                    "type": "integer"
+                                  },
+                                  "wompi_payment_link_url": {
+                                    "type": "string"
+                                  },
+                                  "wompi_payment_link_long_url": {
+                                    "type": "string"
+                                  },
+                                  "wompi_payment_link_qr_url": {
+                                    "type": "string"
+                                  },
+                                  "status_email_sent": {},
                                   "createdAt": {
                                     "type": "string",
                                     "format": "date-time"
@@ -11465,6 +11531,9 @@
                             "tracking_number": {
                               "type": "string"
                             },
+                            "checkout_attempt_id": {
+                              "type": "string"
+                            },
                             "customer_name": {
                               "type": "string"
                             },
@@ -11493,6 +11562,26 @@
                               "type": "number",
                               "format": "float"
                             },
+                            "total": {
+                              "type": "number",
+                              "format": "float"
+                            },
+                            "order_status": {
+                              "type": "string",
+                              "enum": [
+                                "pending_shipping",
+                                "shipped",
+                                "delivered"
+                              ]
+                            },
+                            "fulfillment_status": {
+                              "type": "string",
+                              "enum": [
+                                "pending_shipping",
+                                "shipped",
+                                "delivered"
+                              ]
+                            },
                             "payment_status": {
                               "type": "string",
                               "enum": [
@@ -11502,7 +11591,37 @@
                                 "refunded"
                               ]
                             },
+                            "internal_payment_status": {
+                              "type": "string",
+                              "enum": [
+                                "pending",
+                                "paid",
+                                "failed",
+                                "refunded"
+                              ]
+                            },
+                            "wompi_payment_status": {
+                              "type": "string",
+                              "enum": [
+                                "pending",
+                                "paid",
+                                "failed",
+                                "refunded"
+                              ]
+                            },
                             "wompi_transaction_id": {
+                              "type": "string"
+                            },
+                            "wompi_transaction_status": {
+                              "type": "string"
+                            },
+                            "wompi_transaction_message": {
+                              "type": "string"
+                            },
+                            "wompi_authorization_code": {
+                              "type": "string"
+                            },
+                            "wompi_payment_method": {
                               "type": "string"
                             },
                             "expires_at": {
@@ -11936,6 +12055,19 @@
                                 }
                               }
                             },
+                            "wompi_payment_link_id": {
+                              "type": "integer"
+                            },
+                            "wompi_payment_link_url": {
+                              "type": "string"
+                            },
+                            "wompi_payment_link_long_url": {
+                              "type": "string"
+                            },
+                            "wompi_payment_link_qr_url": {
+                              "type": "string"
+                            },
+                            "status_email_sent": {},
                             "createdAt": {
                               "type": "string",
                               "format": "date-time"
@@ -13717,6 +13849,9 @@
                                       "tracking_number": {
                                         "type": "string"
                                       },
+                                      "checkout_attempt_id": {
+                                        "type": "string"
+                                      },
                                       "customer_name": {
                                         "type": "string"
                                       },
@@ -13745,6 +13880,26 @@
                                         "type": "number",
                                         "format": "float"
                                       },
+                                      "total": {
+                                        "type": "number",
+                                        "format": "float"
+                                      },
+                                      "order_status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending_shipping",
+                                          "shipped",
+                                          "delivered"
+                                        ]
+                                      },
+                                      "fulfillment_status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending_shipping",
+                                          "shipped",
+                                          "delivered"
+                                        ]
+                                      },
                                       "payment_status": {
                                         "type": "string",
                                         "enum": [
@@ -13754,7 +13909,37 @@
                                           "refunded"
                                         ]
                                       },
+                                      "internal_payment_status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending",
+                                          "paid",
+                                          "failed",
+                                          "refunded"
+                                        ]
+                                      },
+                                      "wompi_payment_status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending",
+                                          "paid",
+                                          "failed",
+                                          "refunded"
+                                        ]
+                                      },
                                       "wompi_transaction_id": {
+                                        "type": "string"
+                                      },
+                                      "wompi_transaction_status": {
+                                        "type": "string"
+                                      },
+                                      "wompi_transaction_message": {
+                                        "type": "string"
+                                      },
+                                      "wompi_authorization_code": {
+                                        "type": "string"
+                                      },
+                                      "wompi_payment_method": {
                                         "type": "string"
                                       },
                                       "expires_at": {
@@ -14081,6 +14266,19 @@
                                           }
                                         }
                                       },
+                                      "wompi_payment_link_id": {
+                                        "type": "integer"
+                                      },
+                                      "wompi_payment_link_url": {
+                                        "type": "string"
+                                      },
+                                      "wompi_payment_link_long_url": {
+                                        "type": "string"
+                                      },
+                                      "wompi_payment_link_qr_url": {
+                                        "type": "string"
+                                      },
+                                      "status_email_sent": {},
                                       "createdAt": {
                                         "type": "string",
                                         "format": "date-time"
@@ -16416,6 +16614,9 @@
                                             "tracking_number": {
                                               "type": "string"
                                             },
+                                            "checkout_attempt_id": {
+                                              "type": "string"
+                                            },
                                             "customer_name": {
                                               "type": "string"
                                             },
@@ -16444,6 +16645,26 @@
                                               "type": "number",
                                               "format": "float"
                                             },
+                                            "total": {
+                                              "type": "number",
+                                              "format": "float"
+                                            },
+                                            "order_status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "pending_shipping",
+                                                "shipped",
+                                                "delivered"
+                                              ]
+                                            },
+                                            "fulfillment_status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "pending_shipping",
+                                                "shipped",
+                                                "delivered"
+                                              ]
+                                            },
                                             "payment_status": {
                                               "type": "string",
                                               "enum": [
@@ -16453,7 +16674,37 @@
                                                 "refunded"
                                               ]
                                             },
+                                            "internal_payment_status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "pending",
+                                                "paid",
+                                                "failed",
+                                                "refunded"
+                                              ]
+                                            },
+                                            "wompi_payment_status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "pending",
+                                                "paid",
+                                                "failed",
+                                                "refunded"
+                                              ]
+                                            },
                                             "wompi_transaction_id": {
+                                              "type": "string"
+                                            },
+                                            "wompi_transaction_status": {
+                                              "type": "string"
+                                            },
+                                            "wompi_transaction_message": {
+                                              "type": "string"
+                                            },
+                                            "wompi_authorization_code": {
+                                              "type": "string"
+                                            },
+                                            "wompi_payment_method": {
                                               "type": "string"
                                             },
                                             "expires_at": {
@@ -16780,6 +17031,19 @@
                                                 }
                                               }
                                             },
+                                            "wompi_payment_link_id": {
+                                              "type": "integer"
+                                            },
+                                            "wompi_payment_link_url": {
+                                              "type": "string"
+                                            },
+                                            "wompi_payment_link_long_url": {
+                                              "type": "string"
+                                            },
+                                            "wompi_payment_link_qr_url": {
+                                              "type": "string"
+                                            },
+                                            "status_email_sent": {},
                                             "createdAt": {
                                               "type": "string",
                                               "format": "date-time"
@@ -18058,6 +18322,9 @@
               "tracking_number": {
                 "type": "string"
               },
+              "checkout_attempt_id": {
+                "type": "string"
+              },
               "customer_name": {
                 "type": "string"
               },
@@ -18086,6 +18353,26 @@
                 "type": "number",
                 "format": "float"
               },
+              "total": {
+                "type": "number",
+                "format": "float"
+              },
+              "order_status": {
+                "type": "string",
+                "enum": [
+                  "pending_shipping",
+                  "shipped",
+                  "delivered"
+                ]
+              },
+              "fulfillment_status": {
+                "type": "string",
+                "enum": [
+                  "pending_shipping",
+                  "shipped",
+                  "delivered"
+                ]
+              },
               "payment_status": {
                 "type": "string",
                 "enum": [
@@ -18095,7 +18382,37 @@
                   "refunded"
                 ]
               },
+              "internal_payment_status": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "paid",
+                  "failed",
+                  "refunded"
+                ]
+              },
+              "wompi_payment_status": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "paid",
+                  "failed",
+                  "refunded"
+                ]
+              },
               "wompi_transaction_id": {
+                "type": "string"
+              },
+              "wompi_transaction_status": {
+                "type": "string"
+              },
+              "wompi_transaction_message": {
+                "type": "string"
+              },
+              "wompi_authorization_code": {
+                "type": "string"
+              },
+              "wompi_payment_method": {
                 "type": "string"
               },
               "expires_at": {
@@ -18138,6 +18455,19 @@
                   "example": "string or id"
                 }
               },
+              "wompi_payment_link_id": {
+                "type": "integer"
+              },
+              "wompi_payment_link_url": {
+                "type": "string"
+              },
+              "wompi_payment_link_long_url": {
+                "type": "string"
+              },
+              "wompi_payment_link_qr_url": {
+                "type": "string"
+              },
+              "status_email_sent": {},
               "locale": {
                 "type": "string"
               },
@@ -18223,6 +18553,9 @@
           "tracking_number": {
             "type": "string"
           },
+          "checkout_attempt_id": {
+            "type": "string"
+          },
           "customer_name": {
             "type": "string"
           },
@@ -18251,6 +18584,26 @@
             "type": "number",
             "format": "float"
           },
+          "total": {
+            "type": "number",
+            "format": "float"
+          },
+          "order_status": {
+            "type": "string",
+            "enum": [
+              "pending_shipping",
+              "shipped",
+              "delivered"
+            ]
+          },
+          "fulfillment_status": {
+            "type": "string",
+            "enum": [
+              "pending_shipping",
+              "shipped",
+              "delivered"
+            ]
+          },
           "payment_status": {
             "type": "string",
             "enum": [
@@ -18260,7 +18613,37 @@
               "refunded"
             ]
           },
+          "internal_payment_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "failed",
+              "refunded"
+            ]
+          },
+          "wompi_payment_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "failed",
+              "refunded"
+            ]
+          },
           "wompi_transaction_id": {
+            "type": "string"
+          },
+          "wompi_transaction_status": {
+            "type": "string"
+          },
+          "wompi_transaction_message": {
+            "type": "string"
+          },
+          "wompi_authorization_code": {
+            "type": "string"
+          },
+          "wompi_payment_method": {
             "type": "string"
           },
           "expires_at": {
@@ -19979,6 +20362,9 @@
                                       "tracking_number": {
                                         "type": "string"
                                       },
+                                      "checkout_attempt_id": {
+                                        "type": "string"
+                                      },
                                       "customer_name": {
                                         "type": "string"
                                       },
@@ -20007,6 +20393,26 @@
                                         "type": "number",
                                         "format": "float"
                                       },
+                                      "total": {
+                                        "type": "number",
+                                        "format": "float"
+                                      },
+                                      "order_status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending_shipping",
+                                          "shipped",
+                                          "delivered"
+                                        ]
+                                      },
+                                      "fulfillment_status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending_shipping",
+                                          "shipped",
+                                          "delivered"
+                                        ]
+                                      },
                                       "payment_status": {
                                         "type": "string",
                                         "enum": [
@@ -20016,7 +20422,37 @@
                                           "refunded"
                                         ]
                                       },
+                                      "internal_payment_status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending",
+                                          "paid",
+                                          "failed",
+                                          "refunded"
+                                        ]
+                                      },
+                                      "wompi_payment_status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending",
+                                          "paid",
+                                          "failed",
+                                          "refunded"
+                                        ]
+                                      },
                                       "wompi_transaction_id": {
+                                        "type": "string"
+                                      },
+                                      "wompi_transaction_status": {
+                                        "type": "string"
+                                      },
+                                      "wompi_transaction_message": {
+                                        "type": "string"
+                                      },
+                                      "wompi_authorization_code": {
+                                        "type": "string"
+                                      },
+                                      "wompi_payment_method": {
                                         "type": "string"
                                       },
                                       "expires_at": {
@@ -20186,6 +20622,19 @@
                                           }
                                         }
                                       },
+                                      "wompi_payment_link_id": {
+                                        "type": "integer"
+                                      },
+                                      "wompi_payment_link_url": {
+                                        "type": "string"
+                                      },
+                                      "wompi_payment_link_long_url": {
+                                        "type": "string"
+                                      },
+                                      "wompi_payment_link_qr_url": {
+                                        "type": "string"
+                                      },
+                                      "status_email_sent": {},
                                       "createdAt": {
                                         "type": "string",
                                         "format": "date-time"
@@ -20848,6 +21297,19 @@
               }
             }
           },
+          "wompi_payment_link_id": {
+            "type": "integer"
+          },
+          "wompi_payment_link_url": {
+            "type": "string"
+          },
+          "wompi_payment_link_long_url": {
+            "type": "string"
+          },
+          "wompi_payment_link_qr_url": {
+            "type": "string"
+          },
+          "status_email_sent": {},
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -21113,6 +21575,9 @@
               "tracking_number": {
                 "type": "string"
               },
+              "checkout_attempt_id": {
+                "type": "string"
+              },
               "customer_name": {
                 "type": "string"
               },
@@ -21141,6 +21606,26 @@
                 "type": "number",
                 "format": "float"
               },
+              "total": {
+                "type": "number",
+                "format": "float"
+              },
+              "order_status": {
+                "type": "string",
+                "enum": [
+                  "pending_shipping",
+                  "shipped",
+                  "delivered"
+                ]
+              },
+              "fulfillment_status": {
+                "type": "string",
+                "enum": [
+                  "pending_shipping",
+                  "shipped",
+                  "delivered"
+                ]
+              },
               "payment_status": {
                 "type": "string",
                 "enum": [
@@ -21150,7 +21635,37 @@
                   "refunded"
                 ]
               },
+              "internal_payment_status": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "paid",
+                  "failed",
+                  "refunded"
+                ]
+              },
+              "wompi_payment_status": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "paid",
+                  "failed",
+                  "refunded"
+                ]
+              },
               "wompi_transaction_id": {
+                "type": "string"
+              },
+              "wompi_transaction_status": {
+                "type": "string"
+              },
+              "wompi_transaction_message": {
+                "type": "string"
+              },
+              "wompi_authorization_code": {
+                "type": "string"
+              },
+              "wompi_payment_method": {
                 "type": "string"
               },
               "expires_at": {
@@ -23562,6 +24077,19 @@
                   }
                 }
               },
+              "wompi_payment_link_id": {
+                "type": "integer"
+              },
+              "wompi_payment_link_url": {
+                "type": "string"
+              },
+              "wompi_payment_link_long_url": {
+                "type": "string"
+              },
+              "wompi_payment_link_qr_url": {
+                "type": "string"
+              },
+              "status_email_sent": {},
               "createdAt": {
                 "type": "string",
                 "format": "date-time"
@@ -25009,6 +25537,9 @@
                                           "tracking_number": {
                                             "type": "string"
                                           },
+                                          "checkout_attempt_id": {
+                                            "type": "string"
+                                          },
                                           "customer_name": {
                                             "type": "string"
                                           },
@@ -25037,6 +25568,26 @@
                                             "type": "number",
                                             "format": "float"
                                           },
+                                          "total": {
+                                            "type": "number",
+                                            "format": "float"
+                                          },
+                                          "order_status": {
+                                            "type": "string",
+                                            "enum": [
+                                              "pending_shipping",
+                                              "shipped",
+                                              "delivered"
+                                            ]
+                                          },
+                                          "fulfillment_status": {
+                                            "type": "string",
+                                            "enum": [
+                                              "pending_shipping",
+                                              "shipped",
+                                              "delivered"
+                                            ]
+                                          },
                                           "payment_status": {
                                             "type": "string",
                                             "enum": [
@@ -25046,7 +25597,37 @@
                                               "refunded"
                                             ]
                                           },
+                                          "internal_payment_status": {
+                                            "type": "string",
+                                            "enum": [
+                                              "pending",
+                                              "paid",
+                                              "failed",
+                                              "refunded"
+                                            ]
+                                          },
+                                          "wompi_payment_status": {
+                                            "type": "string",
+                                            "enum": [
+                                              "pending",
+                                              "paid",
+                                              "failed",
+                                              "refunded"
+                                            ]
+                                          },
                                           "wompi_transaction_id": {
+                                            "type": "string"
+                                          },
+                                          "wompi_transaction_status": {
+                                            "type": "string"
+                                          },
+                                          "wompi_transaction_message": {
+                                            "type": "string"
+                                          },
+                                          "wompi_authorization_code": {
+                                            "type": "string"
+                                          },
+                                          "wompi_payment_method": {
                                             "type": "string"
                                           },
                                           "expires_at": {
@@ -25373,6 +25954,19 @@
                                               }
                                             }
                                           },
+                                          "wompi_payment_link_id": {
+                                            "type": "integer"
+                                          },
+                                          "wompi_payment_link_url": {
+                                            "type": "string"
+                                          },
+                                          "wompi_payment_link_long_url": {
+                                            "type": "string"
+                                          },
+                                          "wompi_payment_link_qr_url": {
+                                            "type": "string"
+                                          },
+                                          "status_email_sent": {},
                                           "createdAt": {
                                             "type": "string",
                                             "format": "date-time"
@@ -27918,6 +28512,9 @@
                                     "tracking_number": {
                                       "type": "string"
                                     },
+                                    "checkout_attempt_id": {
+                                      "type": "string"
+                                    },
                                     "customer_name": {
                                       "type": "string"
                                     },
@@ -27946,6 +28543,26 @@
                                       "type": "number",
                                       "format": "float"
                                     },
+                                    "total": {
+                                      "type": "number",
+                                      "format": "float"
+                                    },
+                                    "order_status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pending_shipping",
+                                        "shipped",
+                                        "delivered"
+                                      ]
+                                    },
+                                    "fulfillment_status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pending_shipping",
+                                        "shipped",
+                                        "delivered"
+                                      ]
+                                    },
                                     "payment_status": {
                                       "type": "string",
                                       "enum": [
@@ -27955,7 +28572,37 @@
                                         "refunded"
                                       ]
                                     },
+                                    "internal_payment_status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pending",
+                                        "paid",
+                                        "failed",
+                                        "refunded"
+                                      ]
+                                    },
+                                    "wompi_payment_status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pending",
+                                        "paid",
+                                        "failed",
+                                        "refunded"
+                                      ]
+                                    },
                                     "wompi_transaction_id": {
+                                      "type": "string"
+                                    },
+                                    "wompi_transaction_status": {
+                                      "type": "string"
+                                    },
+                                    "wompi_transaction_message": {
+                                      "type": "string"
+                                    },
+                                    "wompi_authorization_code": {
+                                      "type": "string"
+                                    },
+                                    "wompi_payment_method": {
                                       "type": "string"
                                     },
                                     "expires_at": {
@@ -28282,6 +28929,19 @@
                                         }
                                       }
                                     },
+                                    "wompi_payment_link_id": {
+                                      "type": "integer"
+                                    },
+                                    "wompi_payment_link_url": {
+                                      "type": "string"
+                                    },
+                                    "wompi_payment_link_long_url": {
+                                      "type": "string"
+                                    },
+                                    "wompi_payment_link_qr_url": {
+                                      "type": "string"
+                                    },
+                                    "status_email_sent": {},
                                     "createdAt": {
                                       "type": "string",
                                       "format": "date-time"
@@ -29763,6 +30423,9 @@
                 "tracking_number": {
                   "type": "string"
                 },
+                "checkout_attempt_id": {
+                  "type": "string"
+                },
                 "customer_name": {
                   "type": "string"
                 },
@@ -29791,6 +30454,26 @@
                   "type": "number",
                   "format": "float"
                 },
+                "total": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "order_status": {
+                  "type": "string",
+                  "enum": [
+                    "pending_shipping",
+                    "shipped",
+                    "delivered"
+                  ]
+                },
+                "fulfillment_status": {
+                  "type": "string",
+                  "enum": [
+                    "pending_shipping",
+                    "shipped",
+                    "delivered"
+                  ]
+                },
                 "payment_status": {
                   "type": "string",
                   "enum": [
@@ -29800,7 +30483,37 @@
                     "refunded"
                   ]
                 },
+                "internal_payment_status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "paid",
+                    "failed",
+                    "refunded"
+                  ]
+                },
+                "wompi_payment_status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "paid",
+                    "failed",
+                    "refunded"
+                  ]
+                },
                 "wompi_transaction_id": {
+                  "type": "string"
+                },
+                "wompi_transaction_status": {
+                  "type": "string"
+                },
+                "wompi_transaction_message": {
+                  "type": "string"
+                },
+                "wompi_authorization_code": {
+                  "type": "string"
+                },
+                "wompi_payment_method": {
                   "type": "string"
                 },
                 "expires_at": {
@@ -32212,6 +32925,19 @@
                     }
                   }
                 },
+                "wompi_payment_link_id": {
+                  "type": "integer"
+                },
+                "wompi_payment_link_url": {
+                  "type": "string"
+                },
+                "wompi_payment_link_long_url": {
+                  "type": "string"
+                },
+                "wompi_payment_link_qr_url": {
+                  "type": "string"
+                },
+                "status_email_sent": {},
                 "createdAt": {
                   "type": "string",
                   "format": "date-time"
@@ -32388,6 +33114,12 @@
                 "type": "string",
                 "format": "email"
               },
+              "home_banners": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/StoreHomeBannerComponent"
+                }
+              },
               "locale": {
                 "type": "string"
               },
@@ -32467,6 +33199,12 @@
             "type": "string",
             "format": "email"
           },
+          "home_banners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoreHomeBannerComponent"
+            }
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -32494,653 +33232,6 @@
               },
               "documentId": {
                 "type": "string"
-              },
-              "firstname": {
-                "type": "string"
-              },
-              "lastname": {
-                "type": "string"
-              },
-              "username": {
-                "type": "string"
-              },
-              "email": {
-                "type": "string",
-                "format": "email"
-              },
-              "resetPasswordToken": {
-                "type": "string"
-              },
-              "registrationToken": {
-                "type": "string"
-              },
-              "isActive": {
-                "type": "boolean"
-              },
-              "roles": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "oneOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        }
-                      ]
-                    },
-                    "documentId": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "description": {
-                      "type": "string"
-                    },
-                    "users": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "oneOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "number"
-                              }
-                            ]
-                          },
-                          "documentId": {
-                            "type": "string"
-                          }
-                        }
-                      }
-                    },
-                    "permissions": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "oneOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "number"
-                              }
-                            ]
-                          },
-                          "documentId": {
-                            "type": "string"
-                          },
-                          "action": {
-                            "type": "string"
-                          },
-                          "actionParameters": {},
-                          "subject": {
-                            "type": "string"
-                          },
-                          "properties": {},
-                          "conditions": {},
-                          "role": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "oneOf": [
-                                  {
-                                    "type": "string"
-                                  },
-                                  {
-                                    "type": "number"
-                                  }
-                                ]
-                              },
-                              "documentId": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "apiToken": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "oneOf": [
-                                  {
-                                    "type": "string"
-                                  },
-                                  {
-                                    "type": "number"
-                                  }
-                                ]
-                              },
-                              "documentId": {
-                                "type": "string"
-                              },
-                              "name": {
-                                "type": "string"
-                              },
-                              "description": {
-                                "type": "string"
-                              },
-                              "kind": {
-                                "type": "string",
-                                "enum": [
-                                  "content-api",
-                                  "admin"
-                                ]
-                              },
-                              "type": {
-                                "type": "string",
-                                "enum": [
-                                  "read-only",
-                                  "full-access",
-                                  "custom"
-                                ]
-                              },
-                              "accessKey": {
-                                "type": "string"
-                              },
-                              "encryptedKey": {
-                                "type": "string"
-                              },
-                              "lastUsedAt": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "permissions": {
-                                "type": "array",
-                                "items": {
-                                  "type": "object",
-                                  "properties": {
-                                    "id": {
-                                      "oneOf": [
-                                        {
-                                          "type": "string"
-                                        },
-                                        {
-                                          "type": "number"
-                                        }
-                                      ]
-                                    },
-                                    "documentId": {
-                                      "type": "string"
-                                    },
-                                    "action": {
-                                      "type": "string"
-                                    },
-                                    "token": {
-                                      "type": "object",
-                                      "properties": {
-                                        "id": {
-                                          "oneOf": [
-                                            {
-                                              "type": "string"
-                                            },
-                                            {
-                                              "type": "number"
-                                            }
-                                          ]
-                                        },
-                                        "documentId": {
-                                          "type": "string"
-                                        }
-                                      }
-                                    },
-                                    "createdAt": {
-                                      "type": "string",
-                                      "format": "date-time"
-                                    },
-                                    "updatedAt": {
-                                      "type": "string",
-                                      "format": "date-time"
-                                    },
-                                    "publishedAt": {
-                                      "type": "string",
-                                      "format": "date-time"
-                                    },
-                                    "createdBy": {
-                                      "type": "object",
-                                      "properties": {
-                                        "id": {
-                                          "oneOf": [
-                                            {
-                                              "type": "string"
-                                            },
-                                            {
-                                              "type": "number"
-                                            }
-                                          ]
-                                        },
-                                        "documentId": {
-                                          "type": "string"
-                                        }
-                                      }
-                                    },
-                                    "updatedBy": {
-                                      "type": "object",
-                                      "properties": {
-                                        "id": {
-                                          "oneOf": [
-                                            {
-                                              "type": "string"
-                                            },
-                                            {
-                                              "type": "number"
-                                            }
-                                          ]
-                                        },
-                                        "documentId": {
-                                          "type": "string"
-                                        }
-                                      }
-                                    },
-                                    "locale": {
-                                      "type": "string"
-                                    },
-                                    "localizations": {
-                                      "type": "array",
-                                      "items": {
-                                        "type": "object",
-                                        "properties": {
-                                          "id": {
-                                            "oneOf": [
-                                              {
-                                                "type": "string"
-                                              },
-                                              {
-                                                "type": "number"
-                                              }
-                                            ]
-                                          },
-                                          "documentId": {
-                                            "type": "string"
-                                          }
-                                        }
-                                      }
-                                    }
-                                  }
-                                }
-                              },
-                              "adminPermissions": {
-                                "type": "array",
-                                "items": {
-                                  "type": "object",
-                                  "properties": {
-                                    "id": {
-                                      "oneOf": [
-                                        {
-                                          "type": "string"
-                                        },
-                                        {
-                                          "type": "number"
-                                        }
-                                      ]
-                                    },
-                                    "documentId": {
-                                      "type": "string"
-                                    }
-                                  }
-                                }
-                              },
-                              "adminUserOwner": {
-                                "type": "object",
-                                "properties": {
-                                  "id": {
-                                    "oneOf": [
-                                      {
-                                        "type": "string"
-                                      },
-                                      {
-                                        "type": "number"
-                                      }
-                                    ]
-                                  },
-                                  "documentId": {
-                                    "type": "string"
-                                  }
-                                }
-                              },
-                              "expiresAt": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "lifespan": {
-                                "type": "string",
-                                "pattern": "^\\d*$",
-                                "example": "123456789"
-                              },
-                              "createdAt": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "updatedAt": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "publishedAt": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "createdBy": {
-                                "type": "object",
-                                "properties": {
-                                  "id": {
-                                    "oneOf": [
-                                      {
-                                        "type": "string"
-                                      },
-                                      {
-                                        "type": "number"
-                                      }
-                                    ]
-                                  },
-                                  "documentId": {
-                                    "type": "string"
-                                  }
-                                }
-                              },
-                              "updatedBy": {
-                                "type": "object",
-                                "properties": {
-                                  "id": {
-                                    "oneOf": [
-                                      {
-                                        "type": "string"
-                                      },
-                                      {
-                                        "type": "number"
-                                      }
-                                    ]
-                                  },
-                                  "documentId": {
-                                    "type": "string"
-                                  }
-                                }
-                              },
-                              "locale": {
-                                "type": "string"
-                              },
-                              "localizations": {
-                                "type": "array",
-                                "items": {
-                                  "type": "object",
-                                  "properties": {
-                                    "id": {
-                                      "oneOf": [
-                                        {
-                                          "type": "string"
-                                        },
-                                        {
-                                          "type": "number"
-                                        }
-                                      ]
-                                    },
-                                    "documentId": {
-                                      "type": "string"
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "updatedAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "publishedAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "createdBy": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "oneOf": [
-                                  {
-                                    "type": "string"
-                                  },
-                                  {
-                                    "type": "number"
-                                  }
-                                ]
-                              },
-                              "documentId": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "updatedBy": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "oneOf": [
-                                  {
-                                    "type": "string"
-                                  },
-                                  {
-                                    "type": "number"
-                                  }
-                                ]
-                              },
-                              "documentId": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "locale": {
-                            "type": "string"
-                          },
-                          "localizations": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "id": {
-                                  "oneOf": [
-                                    {
-                                      "type": "string"
-                                    },
-                                    {
-                                      "type": "number"
-                                    }
-                                  ]
-                                },
-                                "documentId": {
-                                  "type": "string"
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    },
-                    "createdAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "publishedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "createdBy": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "oneOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "number"
-                            }
-                          ]
-                        },
-                        "documentId": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "updatedBy": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "oneOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "number"
-                            }
-                          ]
-                        },
-                        "documentId": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "locale": {
-                      "type": "string"
-                    },
-                    "localizations": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "oneOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "number"
-                              }
-                            ]
-                          },
-                          "documentId": {
-                            "type": "string"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              "apiTokens": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "oneOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        }
-                      ]
-                    },
-                    "documentId": {
-                      "type": "string"
-                    }
-                  }
-                }
-              },
-              "blocked": {
-                "type": "boolean"
-              },
-              "preferedLanguage": {
-                "type": "string"
-              },
-              "createdAt": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "updatedAt": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "publishedAt": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "createdBy": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "oneOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "number"
-                      }
-                    ]
-                  },
-                  "documentId": {
-                    "type": "string"
-                  }
-                }
-              },
-              "updatedBy": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "oneOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "number"
-                      }
-                    ]
-                  },
-                  "documentId": {
-                    "type": "string"
-                  }
-                }
-              },
-              "locale": {
-                "type": "string"
-              },
-              "localizations": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "oneOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        }
-                      ]
-                    },
-                    "documentId": {
-                      "type": "string"
-                    }
-                  }
-                }
               }
             }
           },
@@ -33189,6 +33280,12 @@
                 "notification_email": {
                   "type": "string",
                   "format": "email"
+                },
+                "home_banners": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StoreHomeBannerComponent"
+                  }
                 },
                 "createdAt": {
                   "type": "string",
@@ -33275,6 +33372,385 @@
           },
           "meta": {
             "type": "object"
+          }
+        }
+      },
+      "StoreHomeBannerComponent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "home_position": {
+            "type": "integer"
+          },
+          "destination_url": {
+            "type": "string"
+          },
+          "display_scope": {
+            "type": "string",
+            "enum": [
+              "desktop_and_mobile",
+              "desktop_only",
+              "mobile_only"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "desktop_image": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "documentId": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "alternativeText": {
+                "type": "string"
+              },
+              "caption": {
+                "type": "string"
+              },
+              "focalPoint": {},
+              "width": {
+                "type": "integer"
+              },
+              "height": {
+                "type": "integer"
+              },
+              "formats": {},
+              "hash": {
+                "type": "string"
+              },
+              "ext": {
+                "type": "string"
+              },
+              "mime": {
+                "type": "string"
+              },
+              "size": {
+                "type": "number",
+                "format": "float"
+              },
+              "url": {
+                "type": "string"
+              },
+              "previewUrl": {
+                "type": "string"
+              },
+              "provider": {
+                "type": "string"
+              },
+              "provider_metadata": {},
+              "related": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "documentId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "folder": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "documentId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "folderPath": {
+                "type": "string"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "publishedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "createdBy": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "documentId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "updatedBy": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "documentId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "locale": {
+                "type": "string"
+              },
+              "localizations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "documentId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "mobile_image": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "documentId": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "alternativeText": {
+                "type": "string"
+              },
+              "caption": {
+                "type": "string"
+              },
+              "focalPoint": {},
+              "width": {
+                "type": "integer"
+              },
+              "height": {
+                "type": "integer"
+              },
+              "formats": {},
+              "hash": {
+                "type": "string"
+              },
+              "ext": {
+                "type": "string"
+              },
+              "mime": {
+                "type": "string"
+              },
+              "size": {
+                "type": "number",
+                "format": "float"
+              },
+              "url": {
+                "type": "string"
+              },
+              "previewUrl": {
+                "type": "string"
+              },
+              "provider": {
+                "type": "string"
+              },
+              "provider_metadata": {},
+              "related": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "documentId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "folder": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "documentId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "folderPath": {
+                "type": "string"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "publishedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "createdBy": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "documentId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "updatedBy": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "documentId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "locale": {
+                "type": "string"
+              },
+              "localizations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "documentId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -34566,6 +35042,9 @@
                                     "tracking_number": {
                                       "type": "string"
                                     },
+                                    "checkout_attempt_id": {
+                                      "type": "string"
+                                    },
                                     "customer_name": {
                                       "type": "string"
                                     },
@@ -34594,6 +35073,26 @@
                                       "type": "number",
                                       "format": "float"
                                     },
+                                    "total": {
+                                      "type": "number",
+                                      "format": "float"
+                                    },
+                                    "order_status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pending_shipping",
+                                        "shipped",
+                                        "delivered"
+                                      ]
+                                    },
+                                    "fulfillment_status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pending_shipping",
+                                        "shipped",
+                                        "delivered"
+                                      ]
+                                    },
                                     "payment_status": {
                                       "type": "string",
                                       "enum": [
@@ -34603,7 +35102,37 @@
                                         "refunded"
                                       ]
                                     },
+                                    "internal_payment_status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pending",
+                                        "paid",
+                                        "failed",
+                                        "refunded"
+                                      ]
+                                    },
+                                    "wompi_payment_status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pending",
+                                        "paid",
+                                        "failed",
+                                        "refunded"
+                                      ]
+                                    },
                                     "wompi_transaction_id": {
+                                      "type": "string"
+                                    },
+                                    "wompi_transaction_status": {
+                                      "type": "string"
+                                    },
+                                    "wompi_transaction_message": {
+                                      "type": "string"
+                                    },
+                                    "wompi_authorization_code": {
+                                      "type": "string"
+                                    },
+                                    "wompi_payment_method": {
                                       "type": "string"
                                     },
                                     "expires_at": {
@@ -34930,6 +35459,19 @@
                                         }
                                       }
                                     },
+                                    "wompi_payment_link_id": {
+                                      "type": "integer"
+                                    },
+                                    "wompi_payment_link_url": {
+                                      "type": "string"
+                                    },
+                                    "wompi_payment_link_long_url": {
+                                      "type": "string"
+                                    },
+                                    "wompi_payment_link_qr_url": {
+                                      "type": "string"
+                                    },
+                                    "status_email_sent": {},
                                     "createdAt": {
                                       "type": "string",
                                       "format": "date-time"

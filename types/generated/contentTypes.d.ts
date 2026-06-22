@@ -448,7 +448,7 @@ export interface ApiBranchStockBranchStock extends Struct.CollectionTypeSchema {
     singularName: 'branch-stock';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     branch: Schema.Attribute.Relation<'manyToOne', 'api::branch.branch'>;
@@ -487,7 +487,7 @@ export interface ApiBranchBranch extends Struct.CollectionTypeSchema {
     singularName: 'branch';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
@@ -524,7 +524,7 @@ export interface ApiBrandBrand extends Struct.CollectionTypeSchema {
     singularName: 'brand';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
@@ -554,7 +554,7 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
     singularName: 'category';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
@@ -589,7 +589,7 @@ export interface ApiOrderItemOrderItem extends Struct.CollectionTypeSchema {
     singularName: 'order-item';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     branch_stock: Schema.Attribute.Relation<
@@ -630,11 +630,14 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
     singularName: 'order';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     address: Schema.Attribute.String;
     branch: Schema.Attribute.Relation<'manyToOne', 'api::branch.branch'>;
+    checkout_attempt_id: Schema.Attribute.String &
+      Schema.Attribute.Private &
+      Schema.Attribute.Unique;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -644,10 +647,21 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
     delivery_type: Schema.Attribute.Enumeration<['delivery', 'pickup']> &
       Schema.Attribute.Required;
     expires_at: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    fulfillment_status: Schema.Attribute.Enumeration<
+      ['pending_shipping', 'shipped', 'delivered']
+    > &
+      Schema.Attribute.DefaultTo<'pending_shipping'>;
+    internal_payment_status: Schema.Attribute.Enumeration<
+      ['pending', 'paid', 'failed', 'refunded']
+    >;
     items: Schema.Attribute.Relation<'oneToMany', 'api::order-item.order-item'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::order.order'> &
       Schema.Attribute.Private;
+    order_status: Schema.Attribute.Enumeration<
+      ['pending_shipping', 'shipped', 'delivered']
+    > &
+      Schema.Attribute.DefaultTo<'pending_shipping'>;
     payment_status: Schema.Attribute.Enumeration<
       ['pending', 'paid', 'failed', 'refunded']
     > &
@@ -658,14 +672,27 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
       'manyToOne',
       'api::shipping-rate.shipping-rate'
     >;
+    status_email_sent: Schema.Attribute.JSON & Schema.Attribute.Private;
     subtotal: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    total: Schema.Attribute.Decimal;
     tracking_number: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    wompi_authorization_code: Schema.Attribute.String;
+    wompi_payment_link_id: Schema.Attribute.Integer;
+    wompi_payment_link_long_url: Schema.Attribute.String;
+    wompi_payment_link_qr_url: Schema.Attribute.String;
+    wompi_payment_link_url: Schema.Attribute.String;
+    wompi_payment_method: Schema.Attribute.String;
+    wompi_payment_status: Schema.Attribute.Enumeration<
+      ['pending', 'paid', 'failed', 'refunded']
+    >;
     wompi_transaction_id: Schema.Attribute.String;
+    wompi_transaction_message: Schema.Attribute.Text;
+    wompi_transaction_status: Schema.Attribute.String;
   };
 }
 
@@ -678,7 +705,7 @@ export interface ApiProductImageProductImage
     singularName: 'product-image';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -712,7 +739,7 @@ export interface ApiProductProduct extends Struct.CollectionTypeSchema {
     singularName: 'product';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
@@ -757,7 +784,7 @@ export interface ApiShippingRateShippingRate
     singularName: 'shipping-rate';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
@@ -784,17 +811,19 @@ export interface ApiShippingRateShippingRate
 export interface ApiStoreConfigStoreConfig extends Struct.SingleTypeSchema {
   collectionName: 'store_configs';
   info: {
+    description: 'Configuraci\u00F3n general de la tienda, datos de contacto y banners del home';
     displayName: 'Store Config';
     pluralName: 'store-configs';
     singularName: 'store-config';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    home_banners: Schema.Attribute.Component<'store.home-banner', true>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -819,7 +848,7 @@ export interface ApiVariantOptionVariantOption
     singularName: 'variant-option';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;

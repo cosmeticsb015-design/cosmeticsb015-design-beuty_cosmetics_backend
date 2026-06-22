@@ -5,6 +5,7 @@
 import strapiCloud from "@strapi/plugin-cloud/strapi-admin";
 import documentation from "@strapi/plugin-documentation/strapi-admin";
 import usersPermissions from "@strapi/plugin-users-permissions/strapi-admin";
+import admin2Fa from "@vivinkv28/strapi-2fa-admin-plugin/strapi-admin";
 import { renderAdmin } from "@strapi/strapi/admin";
 
 renderAdmin(document.getElementById("strapi"), {
@@ -12,5 +13,6 @@ renderAdmin(document.getElementById("strapi"), {
     "strapi-cloud": strapiCloud,
     documentation: documentation,
     "users-permissions": usersPermissions,
+    "admin-2fa": admin2Fa,
   },
 });

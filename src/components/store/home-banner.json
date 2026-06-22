@@ -1,0 +1,51 @@
+{
+  "collectionName": "components_store_home_banners",
+  "info": {
+    "displayName": "Home Banner",
+    "description": "Banner para el carrusel principal y promociones temporales del home"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "home_position": {
+      "type": "integer",
+      "required": true,
+      "min": 1
+    },
+    "destination_url": {
+      "type": "string"
+    },
+    "display_scope": {
+      "type": "enumeration",
+      "enum": [
+        "desktop_and_mobile",
+        "desktop_only",
+        "mobile_only"
+      ],
+      "default": "desktop_and_mobile",
+      "required": true
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "desktop_image": {
+      "type": "media",
+      "multiple": false,
+      "required": true,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "mobile_image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
+    }
+  }
+}

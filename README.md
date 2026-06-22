@@ -59,3 +59,136 @@ Feel free to check out the [Strapi GitHub repository](https://github.com/strapi/
 ---
 
 <sub>🤫 Psst! [Strapi is hiring](https://strapi.io/careers).</sub>
+
+## Wompi QA with Cloudflare Tunnel
+
+For QA/local testing, Wompi must receive public HTTPS URLs. If you run:
+
+```bash
+cloudflared tunnel --url http://localhost:8000
+```
+
+and Cloudflare gives you `https://santa-ball-injured-upgrade.trycloudflare.com`, configure the storefront return environment with that same host:
+
+```env
+WOMPI_WEBHOOK_QA_OVERRIDE=false
+WOMPI_URL_AUTH=https://id.wompi.sv/connect/token
+WOMPI_URL_API=https://api.wompi.sv
+WOMPI_REDIRECT_URL=https://santa-ball-injured-upgrade.trycloudflare.com/checkout/gracias-por-su-compra
+WOMPI_WEBHOOK_URL=https://santa-ball-injured-upgrade.trycloudflare.com/api/payments/wompi/webhook
+```
+
+Use `/api/payments/wompi/*` when the tunnel points to the storefront/Next.js app. If the tunnel points directly to Strapi, use Strapi's routes instead:
+
+```env
+WOMPI_REDIRECT_URL=https://santa-ball-injured-upgrade.trycloudflare.com/api/wompi/redirect
+WOMPI_WEBHOOK_URL=https://santa-ball-injured-upgrade.trycloudflare.com/api/wompi/webhook
+```
+
+Restart the app after changing the environment variables. Quick Cloudflare Tunnel URLs change every time you start a new unnamed tunnel, so update the Wompi variables whenever the generated `trycloudflare.com` host changes.
+
+If Cloudflare logs `connect: connection refused` for `127.0.0.1:8000`, the tunnel is working but the local origin is not running on port 8000. Start the storefront on that port or point the tunnel to the running Strapi port instead, for example:
+
+```bash
+cloudflared tunnel --url http://localhost:1337
+```
+
+When the tunnel points directly to Strapi, set `WOMPI_RETURN_URL` to the storefront thank-you page URL. After Wompi calls `/api/wompi/redirect`, Strapi validates the signed redirect and forwards the shopper to `WOMPI_RETURN_URL` with order and transaction query parameters.
+
+### Dual-tunnel QA setup
+
+If you run one tunnel for Strapi and one tunnel for the storefront, use the Strapi tunnel for Wompi callback URLs and the storefront tunnel only as the final return page:
+
+```bash
+cloudflared tunnel --url http://localhost:1337
+# example Strapi tunnel: https://compete-number-expand-kinda.trycloudflare.com
+
+cloudflared tunnel --url http://localhost:3000
+# example storefront tunnel: https://crops-sherman-output-relocation.trycloudflare.com
+```
+
+Configure the backend Wompi variables like this:
+
+```env
+WOMPI_WEBHOOK_QA_OVERRIDE=false
+WOMPI_URL_AUTH=https://id.wompi.sv/connect/token
+WOMPI_URL_API=https://api.wompi.sv
+# Customer return page in the storefront, after Strapi validates Wompi's signed redirect
+WOMPI_REDIRECT_URL=https://crops-sherman-output-relocation.trycloudflare.com/checkout/gracias-por-su-compra
+WOMPI_RETURN_URL=https://crops-sherman-output-relocation.trycloudflare.com/checkout/gracias-por-su-compra
+
+# Public Strapi tunnel. Payment links derive urlRedirect as /api/wompi/redirect from this URL
+# when WOMPI_REDIRECT_URL points to the storefront thank-you page.
+WOMPI_BACKEND_URL=https://compete-number-expand-kinda.trycloudflare.com
+
+# Server-to-server payment confirmation (Strapi tunnel)
+WOMPI_WEBHOOK_URL=https://compete-number-expand-kinda.trycloudflare.com/api/wompi/webhook
+# Alternatively, you can use:
+# WOMPI_STOREFRONT_URL=https://crops-sherman-output-relocation.trycloudflare.com
+# WOMPI_THANK_YOU_PATH=/checkout/gracias-por-su-compra
+```
+
+With this setup, Wompi first sends the shopper back to Strapi at `/api/wompi/redirect`; Strapi validates Wompi's signed query string and then redirects the shopper to the storefront `/checkout/gracias-por-su-compra` page with both the original Wompi params and the normalized order fields. The backend also embeds `order` and `tracking_number` in the Wompi `urlRedirect` as a compatibility fallback for the current storefront page, which only reads those two parameters before loading `/api/orders/public/:identifier`. Payment confirmation is handled by the Strapi webhook.
+
+### Troubleshooting webhook 404 in the storefront terminal
+
+If the storefront terminal logs `POST /api/payments/wompi/webhook 404`, Wompi is calling the storefront tunnel for the webhook. That endpoint must point to Strapi unless the frontend explicitly proxies it to Strapi.
+
+Use the Strapi tunnel for the webhook:
+
+```env
+WOMPI_WEBHOOK_URL=https://compete-number-expand-kinda.trycloudflare.com/api/wompi/webhook
+```
+
+Use the storefront tunnel only for the final customer return page, and expose the Strapi tunnel separately:
+
+```env
+WOMPI_REDIRECT_URL=https://crops-sherman-output-relocation.trycloudflare.com/checkout/gracias-por-su-compra
+WOMPI_RETURN_URL=https://crops-sherman-output-relocation.trycloudflare.com/checkout/gracias-por-su-compra
+WOMPI_BACKEND_URL=https://compete-number-expand-kinda.trycloudflare.com
+```
+
+After changing these variables, restart Strapi and create a new Wompi payment link. Existing Wompi links keep the old webhook URL, so they will continue to call the wrong endpoint until a new link is generated.
+
+If an old Wompi link already redirects to the Strapi host at `/checkout/gracias-por-su-compra`, Strapi also exposes that path as a compatibility alias for the signed Wompi redirect. It validates the Wompi hash and then forwards to the configured storefront return URL. For new links, prefer the storefront tunnel in `WOMPI_REDIRECT_URL`.
+
+If a Wompi link was already generated with the root Strapi URL `/checkout/gracias-por-su-compra` instead of an `/api/*` route, Strapi registers a root compatibility redirect for that path during bootstrap. It forwards the full Wompi query string to `WOMPI_RETURN_URL` or to `WOMPI_STOREFRONT_URL + WOMPI_THANK_YOU_PATH`. This is only a QA safety net; the correct fix is still to generate a new link with the storefront `WOMPI_REDIRECT_URL`.
+
+
+### Public order link expiration
+
+The public order detail URL used by the storefront thank-you page is intentionally time-limited. By default, `/api/orders/public/:identifier` is available for 24 hours from the order expiration/creation window and then returns `410 Gone`. Override the duration with:
+
+```env
+PUBLIC_ORDER_ACCESS_TTL_HOURS=24
+```
+
+For short QA tests, use minutes instead. When `PUBLIC_ORDER_ACCESS_TTL_MINUTES` is set, it takes precedence over hours:
+
+```env
+PUBLIC_ORDER_ACCESS_TTL_MINUTES=1
+```
+
+The response also includes `public_access_expires_at` so the storefront can display or handle the expiration time.
+
+### Cloudflare frontend origins and CORS
+
+The backend CORS middleware reads `CORS_ORIGINS`, `FRONTEND_URL`, `NEXT_PUBLIC_SITE_URL`, `WOMPI_REDIRECT_URL`, `WOMPI_RETURN_URL`, and `WOMPI_STOREFRONT_URL` and allows those origins automatically. For a Cloudflare QA frontend tunnel, configure the backend like this:
+
+```env
+FRONTEND_URL=https://wow-political-automobile-webcast.trycloudflare.com
+CORS_ORIGINS=http://localhost:3000,https://wow-political-automobile-webcast.trycloudflare.com
+```
+
+Next.js HMR websocket errors such as `/_next/webpack-hmr` are controlled by the frontend dev server, not Strapi. They do not come from the Wompi backend routes, the Strapi CORS middleware, or the order lookup endpoint. In the frontend repo, add the current `trycloudflare.com` host to `allowedDevOrigins` in `next.config.js` for local development and restart the Next.js dev server:
+
+```js
+// beauty_cosmetics_frontend/next.config.js
+module.exports = {
+  allowedDevOrigins: ['bathroom-publisher-enterprises-had.trycloudflare.com'],
+};
+```
+
+`allowedDevOrigins` must contain the frontend dev-server host only, without `https://`. Do not put the Strapi/backend tunnel here. For example, if the browser page is open at `https://bathroom-publisher-enterprises-had.trycloudflare.com`, use `bathroom-publisher-enterprises-had.trycloudflare.com`; if the backend tunnel is `https://importantly-adrian-tapes-frontier.trycloudflare.com`, that backend value belongs in the frontend API base URL variables and in the backend `WOMPI_BACKEND_URL`, not in `allowedDevOrigins`.
+
+If the tunnel hostname changes, replace the hostname in `allowedDevOrigins` with the new frontend Cloudflare hostname. This is a development-only Next.js setting; rebuilding or restarting Strapi will not stop the HMR websocket retry loop.

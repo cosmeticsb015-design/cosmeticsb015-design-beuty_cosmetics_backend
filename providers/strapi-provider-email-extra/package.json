@@ -1,0 +1,10 @@
+{
+  "name": "strapi-provider-email-extra",
+  "version": "0.0.0-local",
+  "description": "Local Strapi email provider wrapper for Nodemailer SMTP and Mailjet.",
+  "main": "index.js",
+  "license": "MIT",
+  "strapi": {
+    "isProvider": true
+  }
+}

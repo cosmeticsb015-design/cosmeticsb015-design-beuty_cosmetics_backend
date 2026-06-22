@@ -1,0 +1,45 @@
+{
+  "kind": "collectionType",
+  "collectionName": "branches",
+  "info": {
+    "singularName": "branch",
+    "pluralName": "branches",
+    "displayName": "Branch"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "address": {
+      "type": "string",
+      "required": true
+    },
+    "schedule": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "text"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "stocks": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::branch-stock.branch-stock",
+      "mappedBy": "branch"
+    },
+    "orders": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::order.order",
+      "mappedBy": "branch"
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "shipping_rates",
+  "info": {
+    "singularName": "shipping-rate",
+    "pluralName": "shipping-rates",
+    "displayName": "Shipping Rate"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "cost": {
+      "type": "decimal",
+      "required": true
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "orders": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::order.order",
+      "mappedBy": "shipping_rate"
+    }
+  }
+}

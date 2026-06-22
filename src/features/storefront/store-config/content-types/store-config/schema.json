@@ -1,0 +1,27 @@
+{
+  "kind": "singleType",
+  "collectionName": "store_configs",
+  "info": {
+    "singularName": "store-config",
+    "pluralName": "store-configs",
+    "displayName": "Store Config",
+    "description": "Configuración general de la tienda, datos de contacto y banners del home"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "whatsapp_number": {
+      "type": "string"
+    },
+    "notification_email": {
+      "type": "email"
+    },
+    "home_banners": {
+      "type": "component",
+      "repeatable": true,
+      "component": "store.home-banner"
+    }
+  }
+}

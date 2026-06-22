@@ -1,0 +1,43 @@
+{
+  "kind": "collectionType",
+  "collectionName": "branch_stocks",
+  "info": {
+    "singularName": "branch-stock",
+    "pluralName": "branch-stocks",
+    "displayName": "Branch Stock"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "quantity": {
+      "type": "integer",
+      "required": true,
+      "default": 0
+    },
+    "reserved": {
+      "type": "integer",
+      "required": true,
+      "default": 0
+    },
+    "variant": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::variant-option.variant-option",
+      "inversedBy": "stocks"
+    },
+    "branch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch",
+      "inversedBy": "stocks"
+    },
+    "items": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::order-item.order-item",
+      "mappedBy": "branch_stock"
+    }
+  }
+}
