@@ -132,40 +132,42 @@ const buildOtpEmail = (otp: string, ttlSeconds: number) => {
   const subject = 'Tu código de verificación - Beauty Cosmetics';
 
   const logoHtml = logoUrl
-    ? `<img src="${escapeHtml(logoUrl)}" alt="Beauty Cosmetics" width="96" style="display:block;margin:0 auto 16px;border-radius:999px;" />`
-    : `<div style="width:96px;height:96px;border-radius:999px;background:#cf527d;color:#fff7d9;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;">BC</div>`;
-
-  const codeDigitsHtml = otp
-    .split('')
-    .map(
-      (digit) =>
-        `<td style="padding:0 4px;"><div style="width:42px;height:52px;background:#fff0f5;border:1px solid #f3d6df;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#9e3659;">${escapeHtml(digit)}</div></td>`
-    )
-    .join('');
+    ? `<img src="${escapeHtml(logoUrl)}" width="72" height="72" alt="Beauty Cosmetics" style="display:block;margin:0 auto 14px;border:0;outline:none;text-decoration:none;border-radius:36px;" />`
+    : `<div style="width:72px;height:72px;line-height:72px;border-radius:36px;background:#cf527d;color:#fff7d9;margin:0 auto 14px;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:700;">BC</div>`;
 
   const html = `<!doctype html>
 <html lang="es">
-  <body style="margin:0;background:#fff7fb;font-family:Arial,Helvetica,sans-serif;color:#2f2f3a;">
-    <div style="max-width:520px;margin:0 auto;padding:28px 16px;">
-      <div style="background:#ffffff;border:1px solid #f3d6df;border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(207,82,125,.12);">
-        <div style="background:#cf527d;padding:28px;text-align:center;color:#fff7d9;">
-          ${logoHtml}
-          <h1 style="margin:0;font-size:24px;">Código de verificación</h1>
-          <p style="margin:10px 0 0;font-size:14px;color:#fff7d9;">Panel administrativo de Beauty Cosmetics</p>
-        </div>
-        <div style="padding:32px 28px;">
-          <p style="font-size:16px;line-height:1.55;margin:0 0 24px;text-align:center;">Usa este código para completar tu inicio de sesión:</p>
-          <table role="presentation" align="center" cellspacing="0" cellpadding="0" style="margin:0 auto 24px;">
-            <tr>${codeDigitsHtml}</tr>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Código de verificación</title>
+  </head>
+  <body style="margin:0;padding:0;background:#fff7fb;font-family:Arial,Helvetica,sans-serif;color:#2f2f3a;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:#fff7fb;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">
+      <tr>
+        <td align="center" style="padding:28px 12px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:560px;background:#ffffff;border:1px solid #f3d6df;border-collapse:separate;border-spacing:0;">
+            <tr>
+              <td align="center" bgcolor="#cf527d" style="background:#cf527d;padding:30px 24px 26px;text-align:center;color:#fff7d9;">
+                ${logoHtml}
+                <h1 style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:24px;line-height:30px;font-weight:700;color:#fff7d9;">Código de verificación</h1>
+                <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:20px;color:#fff7d9;">Panel administrativo de Beauty Cosmetics</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px 24px 28px;text-align:center;">
+                <p style="margin:0 0 18px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:24px;color:#374151;">Copia y pega este código para completar tu inicio de sesión:</p>
+                <div style="margin:0 auto 10px;padding:14px 18px;border:1px solid #f0c7d5;background:#fff0f5;font-family:'Courier New',Courier,monospace;font-size:32px;line-height:38px;font-weight:700;letter-spacing:8px;color:#9e3659;text-align:center;word-break:break-all;">${escapeHtml(otp)}</div>
+                <p style="margin:0 0 22px;font-family:'Courier New',Courier,monospace;font-size:18px;line-height:24px;font-weight:700;color:#9e3659;text-align:center;">${escapeHtml(otp)}</p>
+                <p style="margin:0 0 18px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:22px;color:#6b7280;">Este código expira en <strong>${expiryMinutes} minuto${expiryMinutes === 1 ? '' : 's'}</strong>.</p>
+                <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:#8a6473;">Si no intentaste iniciar sesión, puedes ignorar este correo.</p>
+              </td>
+            </tr>
           </table>
-          <p style="font-size:14px;line-height:1.5;margin:0 0 22px;text-align:center;color:#6b7280;">
-            Este código expira en <strong>${expiryMinutes} minuto${expiryMinutes === 1 ? '' : 's'}</strong>.
-          </p>
-   
-        </div>
-      </div>
-      <p style="margin:20px 0 0;text-align:center;font-size:12px;color:#b08a98;">© ${new Date().getFullYear()} Beauty Cosmetics. Todos los derechos reservados.</p>
-    </div>
+          <p style="margin:18px 0 0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:18px;color:#b08a98;">© ${new Date().getFullYear()} Beauty Cosmetics. Todos los derechos reservados.</p>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>`;
 
