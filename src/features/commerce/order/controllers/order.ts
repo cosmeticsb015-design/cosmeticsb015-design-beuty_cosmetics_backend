@@ -523,8 +523,33 @@ const findOrderByCheckoutAttemptId = async (strapi: any, checkoutAttemptId: stri
   return orders[0];
 };
 
+// FIX: cuando el primer intento de pago falló ANTES de obtener un enlace de
+// Wompi (ej. el 503 "Unable to authenticate with Wompi"), la orden queda
+// marcada payment_status: 'failed' pero conserva su checkout_attempt_id.
+// Sin este fix, todo reintento con el mismo checkout_attempt_id (el frontend
+// reutiliza el mismo id hasta que el pago tiene éxito) encontraba esa orden
+// fallida y respondía 409 para siempre, dejando al cliente sin poder pagar.
+// Ahora: si la orden falló y nunca llegó a tener un enlace de Wompi,
+// reintentamos generar el enlace para ESA MISMA orden en vez de bloquear.
 const respondWithExistingCheckoutAttempt = async (ctx: any, strapi: any, order: any) => {
-  if (!order.wompi_payment_link_url && !order.wompi_payment_link_long_url) {
+  const hasPaymentLink = Boolean(order.wompi_payment_link_url || order.wompi_payment_link_long_url);
+
+  if (!hasPaymentLink && order.payment_status === 'failed') {
+    try {
+      const wompiPayment = await attachWompiPaymentLink(strapi, order);
+      ctx.status = 200;
+      ctx.body = { data: { ...order, wompi_payment: wompiPayment, idempotent_replay: true } };
+      return;
+    } catch (error) {
+      const message = getWompiErrorMessage(error);
+      strapi.log.error('Retry of a previously failed checkout attempt also failed to reach Wompi', error);
+      return ctx.internalServerError(`No se pudo crear el enlace de pago de Wompi para la orden: ${message}`);
+    }
+  }
+
+  if (!hasPaymentLink) {
+    // El primer intento sigue genuinamente en curso (no ha fallado ni tiene
+    // enlace todavía): aquí sí tiene sentido pedirle al cliente que espere.
     ctx.status = 409;
     ctx.body = { error: { message: 'La orden ya se está procesando. Por favor espera la respuesta del primer intento de pago.' } };
     return;
