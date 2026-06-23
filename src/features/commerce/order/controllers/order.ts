@@ -48,10 +48,10 @@ const getWompiPaymentMethodLabel = (value: unknown) => {
 
   const paymentMethodMap: Record<string, string> = {
     '0': 'PagoNormal',
-    '1': 'Puntos',
-    '2': 'Cuotas',
-    '3': 'Bitcoin',
-    '4': 'QuickPay',
+    //'1': 'Puntos',
+    //'2': 'Cuotas',
+    //'3': 'Bitcoin',
+    //'4': 'QuickPay',
   };
 
   return paymentMethodMap[normalized] || normalized;
