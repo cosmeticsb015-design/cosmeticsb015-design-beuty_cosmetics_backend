@@ -394,6 +394,13 @@ const buildWompiPaymentLinkPayload = (order: any) => {
     identificadorEnlaceComercio: commerceId,
     monto: Number(total.toFixed(2)),
     nombreProducto: buildWompiProductName(order),
+    formaPago: {
+      permitirTarjetaCreditoDebido: true,
+      // permitirPagoConPuntoAgricola: false,
+      // permitirPagoEnBitcoin: false,
+      // permitirPagoEnCuotasAgricola: false,
+      // permitePagoQuickPay: false,
+    },
     infoProducto: {
       descripcionProducto: buildWompiProductDescription(order),
     },
