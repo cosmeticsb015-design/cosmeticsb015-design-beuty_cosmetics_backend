@@ -563,6 +563,22 @@ const findAttemptByTrackingNumber = async (strapi: any, trackingNumber: string) 
   return attempts[0];
 };
 
+const findCheckoutSubjectForPaymentLink = async (strapi: any, identifier: string) => {
+  const order = await findOrderByDocumentId(strapi, identifier);
+  if (order) return { kind: 'order' as const, entity: order };
+
+  const attemptByDocumentId = await findAttemptByDocumentId(strapi, identifier);
+  if (attemptByDocumentId) return { kind: 'attempt' as const, entity: attemptByDocumentId };
+
+  const attemptByTrackingNumber = await findAttemptByTrackingNumber(strapi, identifier);
+  if (attemptByTrackingNumber) return { kind: 'attempt' as const, entity: attemptByTrackingNumber };
+
+  const attemptByCheckoutAttemptId = await findAttemptByCheckoutAttemptId(strapi, identifier);
+  if (attemptByCheckoutAttemptId) return { kind: 'attempt' as const, entity: attemptByCheckoutAttemptId };
+
+  return null;
+};
+
 // FIX: cuando el primer intento de pago falló ANTES de obtener un enlace de
 // Wompi (ej. el 503 "Unable to authenticate with Wompi"), la orden queda
 // marcada payment_status: 'failed' pero conserva su checkout_attempt_id.
@@ -1038,22 +1054,56 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
   },
 
   async createWompiPaymentLink(ctx) {
-    const order = await strapi.documents('api::order.order').findOne({
-      documentId: ctx.params.id,
-      populate: { items: true },
-    });
+    const identifier =
+      ctx.params.id ||
+      ctx.request.body?.id ||
+      ctx.request.body?.order ||
+      ctx.request.body?.orderId ||
+      ctx.request.body?.orderDocumentId ||
+      ctx.request.body?.attempt ||
+      ctx.request.body?.attemptId ||
+      ctx.request.body?.attemptDocumentId ||
+      ctx.request.body?.checkoutAttemptId ||
+      ctx.request.body?.tracking_number;
 
-    if (!order) return ctx.notFound('Order not found');
-    if (order.payment_status === 'paid') return ctx.badRequest('Order is already paid');
-    if (isPublicOrderAccessExpired(order)) return ctx.badRequest('Order payment link has expired');
+    if (!identifier) return ctx.badRequest('Checkout attempt identifier is required');
+
+    const checkoutSubject = await findCheckoutSubjectForPaymentLink(strapi, String(identifier));
+
+    if (!checkoutSubject) return ctx.notFound('Checkout attempt not found');
+
+    const { kind, entity } = checkoutSubject;
+
+    if (kind === 'order') {
+      if (entity.payment_status === 'paid') return ctx.badRequest('Order is already paid');
+      if (isPublicOrderAccessExpired(entity)) return ctx.badRequest('Order payment link has expired');
+    } else {
+      if (entity.status === 'promoted' && entity.order?.documentId) {
+        ctx.body = { data: { order: entity.order.documentId, attempt: entity.documentId, payment_status: 'paid' } };
+        return;
+      }
+
+      if (entity.status === 'expired') return ctx.badRequest('Checkout attempt has expired');
+      if (entity.status === 'failed' && (entity.wompi_payment_link_url || entity.wompi_payment_link_long_url)) {
+        return ctx.badRequest('Checkout attempt has failed. Please create a new checkout attempt.');
+      }
+      if (isPublicOrderAccessExpired(entity)) return ctx.badRequest('Checkout attempt payment link has expired');
+    }
 
     try {
-      const wompiPayment = await attachWompiPaymentLink(strapi, order);
-      ctx.body = { data: { order: order.documentId, ...wompiPayment } };
+      const wompiPayment = await attachWompiPaymentLink(strapi, entity);
+      ctx.body = {
+        data: {
+          [kind]: entity.documentId,
+          is_payment_attempt: kind === 'attempt',
+          payment_status: kind === 'attempt' ? 'pending' : entity.payment_status,
+          ...wompiPayment,
+        },
+      };
     } catch (error) {
       const message = getWompiErrorMessage(error);
       if (message.includes('at least')) return ctx.badRequest(message);
-      strapi.log.error('Unable to create Wompi payment link for existing order', error);
+      strapi.log.error('Unable to create Wompi payment link for checkout subject', error);
       return ctx.internalServerError(`No se pudo crear el enlace de pago de Wompi para la orden: ${message}`);
     }
   },
