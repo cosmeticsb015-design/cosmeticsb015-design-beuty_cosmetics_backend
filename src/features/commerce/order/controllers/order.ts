@@ -493,8 +493,11 @@ const buildWompiReturnUrl = (order: any, query: Record<string, unknown>) => {
   }
 };
 
-const findOrderByCommerceId = async (strapi: any, commerceId: string) => {
-  const trackingNumber = commerceId.replace(/^(ORDER|ATTEMPT|CHECKOUT)-/, '');
+const getTrackingNumberFromCommerceId = (commerceId: string) =>
+  commerceId.replace(/^(ORDER|ATTEMPT|CHECKOUT)-/, '');
+
+const findAttemptByCommerceId = async (strapi: any, commerceId: string) => {
+  const trackingNumber = getTrackingNumberFromCommerceId(commerceId);
 
   const attempts = await (strapi.documents as any)('api::payment-attempt.payment-attempt').findMany({
     filters: { tracking_number: trackingNumber },
@@ -561,6 +564,28 @@ const findAttemptByTrackingNumber = async (strapi: any, trackingNumber: string) 
   });
 
   return attempts[0];
+};
+
+const findWompiRedirectSubject = async (strapi: any, commerceId: string, query: Record<string, unknown>) => {
+  const attempt = await findAttemptByCommerceId(strapi, commerceId);
+  if (attempt) return { kind: 'attempt' as const, entity: attempt };
+
+  const queryOrder = String(query.order || '').trim();
+  if (queryOrder) {
+    const orderByDocumentId = await findOrderByDocumentId(strapi, queryOrder);
+    if (orderByDocumentId) return { kind: 'order' as const, entity: orderByDocumentId };
+  }
+
+  const trackingNumber = String(query.tracking_number || getTrackingNumberFromCommerceId(commerceId)).trim();
+  if (trackingNumber) {
+    const attemptByTracking = await findAttemptByTrackingNumber(strapi, trackingNumber);
+    if (attemptByTracking) return { kind: 'attempt' as const, entity: attemptByTracking };
+
+    const orderByTracking = await findOrderByTrackingNumber(strapi, trackingNumber);
+    if (orderByTracking) return { kind: 'order' as const, entity: orderByTracking };
+  }
+
+  return null;
 };
 
 const findCheckoutSubjectForPaymentLink = async (strapi: any, identifier: string) => {
@@ -1138,10 +1163,11 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
 
     if (!commerceId || !transactionId) return ctx.badRequest('Missing Wompi transaction identifiers');
 
-    const attempt = await findOrderByCommerceId(strapi, commerceId);
-    if (!attempt) return ctx.notFound('Payment attempt not found for Wompi transaction');
+    const redirectSubject = await findWompiRedirectSubject(strapi, commerceId, payload);
+    if (!redirectSubject) return ctx.notFound('Payment attempt not found for Wompi transaction');
 
-    const expectedTotal = getAttemptTotal(attempt);
+    const attempt = redirectSubject.entity;
+    const expectedTotal = redirectSubject.kind === 'attempt' ? getAttemptTotal(attempt) : getOrderTotal(attempt);
     const receivedTotal = asNumber(payload.Monto || payload.monto);
     const paid = isApproved && Math.abs(expectedTotal - receivedTotal) < 0.01;
     const webhookPaymentStatus = paid ? 'paid' : 'failed';
@@ -1156,22 +1182,33 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       wompi_payment_method: getWompiPaymentMethodLabel(payload.FormaPago || payload.formaPago || payload.FormaPagoUtilizada || payload.formaPagoUtilizada),
     };
 
-    await (strapi.documents as any)('api::payment-attempt.payment-attempt').update({
-      documentId: attempt.documentId,
-      data: {
-        status: paid ? 'approved' : 'failed',
-        ...paymentStatusData,
-        raw_wompi_webhook_payload: payload,
-      } as any,
-      status: 'published',
-    });
+    if (redirectSubject.kind === 'attempt') {
+      await (strapi.documents as any)('api::payment-attempt.payment-attempt').update({
+        documentId: attempt.documentId,
+        data: {
+          status: paid ? 'approved' : 'failed',
+          ...paymentStatusData,
+          raw_wompi_webhook_payload: payload,
+        } as any,
+        status: 'published',
+      });
 
-    if (paid) {
-      try {
-        await promoteApprovedAttemptToOrder(strapi, { ...attempt, ...paymentStatusData, status: 'approved' }, paymentStatusData);
-      } catch (error) {
-        strapi.log.error('Unable to promote approved Wompi payment attempt to order', error);
+      if (paid) {
+        try {
+          await promoteApprovedAttemptToOrder(strapi, { ...attempt, ...paymentStatusData, status: 'approved' }, paymentStatusData);
+        } catch (error) {
+          strapi.log.error('Unable to promote approved Wompi payment attempt to order', error);
+        }
       }
+    } else {
+      await strapi.documents('api::order.order').update({
+        documentId: attempt.documentId,
+        data: ({
+          ...paymentStatusData,
+          raw_wompi_webhook_payload: payload,
+        } as any),
+        status: 'published',
+      });
     }
 
     ctx.body = { received: true };
@@ -1193,8 +1230,10 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       return ctx.unauthorized('Invalid Wompi redirect signature');
     }
 
-    const attempt = await findOrderByCommerceId(strapi, String(query.identificadorEnlaceComercio || ''));
-    if (!attempt) return ctx.notFound('Payment attempt not found for Wompi redirect');
+    const redirectSubjectResult = await findWompiRedirectSubject(strapi, String(query.identificadorEnlaceComercio || ''), query);
+    if (!redirectSubjectResult) return ctx.notFound('Payment attempt not found for Wompi redirect');
+
+    const attempt = redirectSubjectResult.entity;
 
     const transactionId = String(query.idTransaccion || '');
     const transaction = await fetchWompiTransactionDetails(strapi, transactionId);
@@ -1211,25 +1250,37 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       wompi_payment_method: transactionDetails.wompi_payment_method,
     };
 
-    await (strapi.documents as any)('api::payment-attempt.payment-attempt').update({
-      documentId: attempt.documentId,
-      data: {
-        status: redirectPaymentStatus === 'paid' ? 'approved' : redirectPaymentStatus === 'failed' ? 'failed' : 'pending',
-        ...paymentStatusData,
-        raw_wompi_redirect_payload: query,
-      } as any,
-      status: 'published',
-    });
-
     let order = null;
-    if (redirectPaymentStatus === 'paid') {
-      try {
-        order = await promoteApprovedAttemptToOrder(strapi, { ...attempt, ...paymentStatusData, status: 'approved' }, paymentStatusData);
-      } catch (error) {
-        strapi.log.error('Unable to promote approved Wompi redirect attempt to order', error);
+    if (redirectSubjectResult.kind === 'attempt') {
+      await (strapi.documents as any)('api::payment-attempt.payment-attempt').update({
+        documentId: attempt.documentId,
+        data: {
+          status: redirectPaymentStatus === 'paid' ? 'approved' : redirectPaymentStatus === 'failed' ? 'failed' : 'pending',
+          ...paymentStatusData,
+          raw_wompi_redirect_payload: query,
+        } as any,
+        status: 'published',
+      });
+
+      if (redirectPaymentStatus === 'paid') {
+        try {
+          order = await promoteApprovedAttemptToOrder(strapi, { ...attempt, ...paymentStatusData, status: 'approved' }, paymentStatusData);
+        } catch (error) {
+          strapi.log.error('Unable to promote approved Wompi redirect attempt to order', error);
+        }
+      } else if (attempt.status === 'promoted' && attempt.order?.documentId) {
+        order = await findOrderByDocumentId(strapi, attempt.order.documentId);
       }
-    } else if (attempt.status === 'promoted' && attempt.order?.documentId) {
-      order = await findOrderByDocumentId(strapi, attempt.order.documentId);
+    } else {
+      await strapi.documents('api::order.order').update({
+        documentId: attempt.documentId,
+        data: ({
+          ...paymentStatusData,
+          raw_wompi_redirect_payload: query,
+        } as any),
+        status: 'published',
+      });
+      order = { ...attempt, ...paymentStatusData };
     }
 
     const redirectSubject = order || { ...attempt, payment_status: redirectPaymentStatus };
@@ -1237,7 +1288,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
     if (returnUrl) {
       try {
         const url = new URL(returnUrl);
-        url.searchParams.set('attempt', attempt.documentId);
+        if (redirectSubjectResult.kind === 'attempt') url.searchParams.set('attempt', attempt.documentId);
         if (order?.documentId) url.searchParams.set('order', order.documentId);
         return ctx.redirect(url.toString());
       } catch {
@@ -1248,7 +1299,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
     ctx.body = {
       data: {
         order: order?.documentId || null,
-        attempt: attempt.documentId,
+        attempt: redirectSubjectResult.kind === 'attempt' ? attempt.documentId : null,
         payment_status: redirectPaymentStatus,
         transaction_id: query.idTransaccion,
         approved: asBoolean(query.esAprobada),
