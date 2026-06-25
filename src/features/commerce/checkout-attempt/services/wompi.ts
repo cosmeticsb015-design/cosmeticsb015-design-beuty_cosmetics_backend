@@ -16,7 +16,7 @@ const requiredEnv = (name: string) => {
   return value;
 };
 
-export default factories.createCoreService('api::order.order', ({ strapi }) => ({
+export default factories.createCoreService('api::checkout-attempt.checkout-attempt', ({ strapi }) => ({
   async getAccessToken() {
     if (cachedToken && cachedToken.expiresAt > Date.now() + 60_000) {
       return cachedToken.accessToken;

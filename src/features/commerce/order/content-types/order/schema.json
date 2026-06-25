@@ -163,6 +163,12 @@
       "type": "boolean",
       "default": false,
       "private": true
+    },
+    "checkout_attempt": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::checkout-attempt.checkout-attempt",
+      "inversedBy": "order"
     }
   }
 }

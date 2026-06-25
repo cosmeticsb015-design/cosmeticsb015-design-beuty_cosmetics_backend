@@ -23,6 +23,32 @@ const findPreviousOrder = async (strapi: any, where: Record<string, any>) => {
 };
 
 export default {
+  // FIX: con el flujo de checkout-attempt, una Order SIEMPRE se crea ya con
+  // payment_status: 'paid' (nunca pasa de pending -> paid vía update, porque
+  // la Order como tal solo existe a partir de que Wompi confirma el pago).
+  // El afterUpdate de abajo ya no detecta esa transición porque nunca ocurre
+  // un update de pending a paid; este afterCreate dispara los mismos correos
+  // que antes se enviaban cuando el pago se confirmaba.
+  async afterCreate(event: any) {
+    const order = event.result;
+    if (!order || order.payment_status !== 'paid') return;
+
+    try {
+      await strapi.service('api::order.order-email').sendNewOrderAdminEmailOnce(order.documentId);
+    } catch (emailError) {
+      strapi.log.warn(`Unable to send paid order notification email: ${emailError instanceof Error ? emailError.message : emailError}`);
+    }
+
+    const currentStatus = order.order_status || order.fulfillment_status;
+    if (EMAILABLE_ORDER_STATUSES.includes(currentStatus)) {
+      try {
+        await strapi.service('api::order.order-email').sendOrderStatusEmailOnce(order.documentId, currentStatus);
+      } catch (emailError) {
+        strapi.log.warn(`Unable to send order status email: ${emailError instanceof Error ? emailError.message : emailError}`);
+      }
+    }
+  },
+
   async beforeUpdate(event: any) {
     if (!statusChangedInPayload(event.params?.data)) return;
 

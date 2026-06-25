@@ -1,16 +1,11 @@
 /**
  * order router
+ *
+ * Ya no expone "create" públicamente: las Orders solo nacen del flujo de
+ * pago confirmado (ver checkout-attempt). El core router por defecto
+ * (protegido) es suficiente para el admin.
  */
 
 import { factories } from '@strapi/strapi';
 
-const checkoutRateLimit = {
-  name: 'global::rate-limit',
-  config: { keyPrefix: 'orders:create', windowMs: 60_000, max: 10 },
-};
-
-export default factories.createCoreRouter('api::order.order', {
-  config: {
-    create: { auth: false, middlewares: [checkoutRateLimit] },
-  },
-});
+export default factories.createCoreRouter('api::order.order');
