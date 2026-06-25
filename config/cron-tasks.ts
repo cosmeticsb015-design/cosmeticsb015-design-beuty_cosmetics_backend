@@ -33,10 +33,11 @@ const releaseExpiredPaymentReservations = async ({ strapi }: { strapi: any }) =>
 // fueron aprobados. Ver reconcilePendingWompiAttempts en
 // src/features/commerce/order/controllers/order.ts para el detalle.
 const reconcilePendingWompiPayments = async ({ strapi }: { strapi: any }) => {
+  strapi.log.info('[cron] reconcilePendingWompiPayments: tick');
   try {
     await reconcilePendingWompiAttempts(strapi);
   } catch (error) {
-    strapi.log.error('Error ejecutando reconcilePendingWompiAttempts', error);
+    strapi.log.error('[cron] Error ejecutando reconcilePendingWompiAttempts', error);
   }
 };
 

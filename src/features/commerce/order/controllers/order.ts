@@ -1410,7 +1410,12 @@ export const reconcilePendingWompiAttempts = async (strapi: any) => {
     populate: { order: true, branch: true, shipping_rate: true },
   });
 
-  if (!pendingAttempts.length) return;
+  if (!pendingAttempts.length) {
+    strapi.log.info(`[cron] Reconciliación Wompi: 0 intentos pendientes con más de ${minAgeMs / 1000}s de antigüedad y wompi_payment_link_id asignado.`);
+    return;
+  }
+
+  strapi.log.info(`[cron] Reconciliación Wompi: ${pendingAttempts.length} intento(s) pendiente(s) por revisar.`);
 
   const wompi = strapi.service('api::order.wompi');
 
