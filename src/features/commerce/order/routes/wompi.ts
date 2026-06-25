@@ -35,8 +35,8 @@ export default {
     {
       method: 'POST',
       path: '/checkout/wompi',
-      handler: 'order.createWompiPaymentLink',
-      config: { auth: false, middlewares: [paymentLinkRateLimit] },
+      handler: 'order.create',
+      config: { auth: false, middlewares: [checkoutRateLimit] },
     },
     {
       method: 'POST',
