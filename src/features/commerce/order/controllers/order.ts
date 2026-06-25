@@ -294,8 +294,15 @@ const formatOrderItemLabel = (item: any) => {
   return `${item.product_name}${variant} x${item.quantity}`;
 };
 
+const getCheckoutLineItems = (checkout: any) =>
+  Array.isArray(checkout.items) && checkout.items.length > 0
+    ? checkout.items
+    : Array.isArray(checkout.items_snapshot)
+      ? checkout.items_snapshot
+      : [];
+
 const buildWompiProductName = (order: any) => {
-  const items = Array.isArray(order.items) ? order.items : [];
+  const items = getCheckoutLineItems(order);
   if (items.length === 0) return `Orden ${order.tracking_number}`;
 
   const joined = items.map(formatOrderItemLabel).join(', ');
@@ -305,7 +312,7 @@ const buildWompiProductName = (order: any) => {
 };
 
 const buildWompiProductDescription = (order: any) => {
-  const items = Array.isArray(order.items) ? order.items : [];
+  const items = getCheckoutLineItems(order);
   if (items.length === 0) return `Orden ${order.tracking_number}`;
 
   return items.map(formatOrderItemLabel).join(' | ');
@@ -383,7 +390,7 @@ const mapOrderItemForPublicResponse = (item: any) => {
 };
 
 const buildWompiPaymentLinkPayload = (order: any) => {
-  const commerceId = `ORDER-${order.tracking_number}`;
+  const commerceId = `${order.status ? 'ATTEMPT' : 'ORDER'}-${order.tracking_number}`;
   const total = getOrderTotal(order);
 
   if (total < 0.01) {
@@ -415,7 +422,9 @@ const buildWompiPaymentLinkPayload = (order: any) => {
       cantidadPorDefecto: 1,
     },
     limitesDeUso: { cantidadMaximaPagosExitosos: 1 },
-    datosAdicionales: { orderDocumentId: order.documentId, trackingNumber: order.tracking_number },
+    datosAdicionales: order.status
+      ? { paymentAttemptDocumentId: order.documentId, attemptId: order.attempt_id, trackingNumber: order.tracking_number }
+      : { orderDocumentId: order.documentId, trackingNumber: order.tracking_number },
   };
 };
 
@@ -431,7 +440,7 @@ const attachWompiPaymentLink = async (strapi: any, order: any) => {
   const wompi = strapi.service('api::order.wompi');
   const paymentLink = await wompi.createPaymentLink(buildWompiPaymentLinkPayload(order));
 
-  await strapi.documents('api::order.order').update({
+  await (strapi.documents as any)(order.status ? 'api::payment-attempt.payment-attempt' : 'api::order.order').update({
     documentId: order.documentId,
     data: ({
       wompi_payment_link_id: paymentLink.idEnlace,
@@ -485,15 +494,16 @@ const buildWompiReturnUrl = (order: any, query: Record<string, unknown>) => {
 };
 
 const findOrderByCommerceId = async (strapi: any, commerceId: string) => {
-  const trackingNumber = commerceId.replace(/^ORDER-/, '');
+  const trackingNumber = commerceId.replace(/^(ORDER|ATTEMPT|CHECKOUT)-/, '');
 
-  const orders = await strapi.documents('api::order.order').findMany({
+  const attempts = await (strapi.documents as any)('api::payment-attempt.payment-attempt').findMany({
     filters: { tracking_number: trackingNumber },
     status: 'published',
     limit: 1,
+    populate: { order: true },
   });
 
-  return orders[0];
+  return attempts[0];
 };
 
 const findOrderByDocumentId = async (strapi: any, documentId: string) => {
@@ -519,15 +529,38 @@ const findOrderByTrackingNumber = async (strapi: any, trackingNumber: string) =>
   return orders[0];
 };
 
-const findOrderByCheckoutAttemptId = async (strapi: any, checkoutAttemptId: string) => {
-  const orders = await strapi.documents('api::order.order').findMany({
-    filters: { checkout_attempt_id: checkoutAttemptId },
+const findAttemptByCheckoutAttemptId = async (strapi: any, checkoutAttemptId: string) => {
+  const attempts = await (strapi.documents as any)('api::payment-attempt.payment-attempt').findMany({
+    filters: { attempt_id: checkoutAttemptId },
     status: 'published',
     limit: 1,
-    populate: publicOrderPopulate as any,
+    populate: { order: true },
   });
 
-  return orders[0];
+  return attempts[0];
+};
+
+const findAttemptByDocumentId = async (strapi: any, documentId: string) => {
+  try {
+    return await (strapi.documents as any)('api::payment-attempt.payment-attempt').findOne({
+      documentId,
+      status: 'published',
+      populate: { order: true, branch: true, shipping_rate: true },
+    });
+  } catch {
+    return null;
+  }
+};
+
+const findAttemptByTrackingNumber = async (strapi: any, trackingNumber: string) => {
+  const attempts = await (strapi.documents as any)('api::payment-attempt.payment-attempt').findMany({
+    filters: { tracking_number: trackingNumber },
+    status: 'published',
+    limit: 1,
+    populate: { order: true, branch: true, shipping_rate: true },
+  });
+
+  return attempts[0];
 };
 
 // FIX: cuando el primer intento de pago falló ANTES de obtener un enlace de
@@ -539,9 +572,16 @@ const findOrderByCheckoutAttemptId = async (strapi: any, checkoutAttemptId: stri
 // Ahora: si la orden falló y nunca llegó a tener un enlace de Wompi,
 // reintentamos generar el enlace para ESA MISMA orden en vez de bloquear.
 const respondWithExistingCheckoutAttempt = async (ctx: any, strapi: any, order: any) => {
+  if (order.status === 'promoted' && order.order?.documentId) {
+    const promotedOrder = await findOrderByDocumentId(strapi, order.order.documentId);
+    ctx.status = 200;
+    ctx.body = { data: { ...(promotedOrder || order.order), idempotent_replay: true } };
+    return;
+  }
+
   const hasPaymentLink = Boolean(order.wompi_payment_link_url || order.wompi_payment_link_long_url);
 
-  if (!hasPaymentLink && order.payment_status === 'failed') {
+  if (!hasPaymentLink && order.status === 'failed') {
     try {
       const wompiPayment = await attachWompiPaymentLink(strapi, order);
       ctx.status = 200;
@@ -666,15 +706,221 @@ const markOrderPaymentFailed = async (strapi: any, order: any) => {
   });
 };
 
+const getAttemptTotal = (attempt: any) => Number(attempt.total || 0) || getOrderTotal(attempt);
+
+const claimAttemptForPromotion = async (strapi: any, attempt: any) => {
+  const affectedRows = await strapi.db
+    .connection('payment_attempts')
+    .where({ id: attempt.id })
+    .whereNot({ status: 'promoted' })
+    .whereNot({ status: 'promoting' })
+    .update({ status: 'promoting' });
+
+  return Number(affectedRows) > 0;
+};
+
+const decrementAttemptStock = async (strapi: any, items: any[]) => {
+  const decremented: StockReservation[] = [];
+
+  try {
+    for (const item of items) {
+      const quantity = Number(item.quantity || 0);
+      const branchStockDocumentId = item.branch_stock;
+      if (!branchStockDocumentId || quantity <= 0) throw new Error('Invalid checkout item stock snapshot');
+
+      const stocks = await strapi.documents('api::branch-stock.branch-stock').findMany({
+        filters: { documentId: branchStockDocumentId },
+        status: 'published',
+        limit: 1,
+      });
+      const stock = stocks[0];
+      if (!stock?.id) throw new Error(`Branch stock ${branchStockDocumentId} was not found`);
+
+      const affectedRows = await strapi.db
+        .connection('branch_stocks')
+        .where({ id: stock.id })
+        .whereRaw('COALESCE(quantity, 0) >= ?', [quantity])
+        .decrement('quantity', quantity);
+
+      if (Number(affectedRows) === 0) throw new Error(`Insufficient stock for ${branchStockDocumentId}`);
+      decremented.push({ branchStockId: stock.id, documentId: branchStockDocumentId, quantity });
+    }
+  } catch (error) {
+    await Promise.all(
+      decremented.map((entry) =>
+        strapi.db.connection('branch_stocks').where({ id: entry.branchStockId }).increment('quantity', entry.quantity),
+      ),
+    );
+    throw error;
+  }
+
+  return decremented;
+};
+
+const createOrderFromAttempt = async (strapi: any, attempt: any, paymentStatusData: Record<string, unknown>) => {
+  const items = Array.isArray(attempt.items_snapshot) ? attempt.items_snapshot : [];
+  if (items.length === 0) throw new Error('Payment attempt has no item snapshot');
+
+  const decrementedStock = await decrementAttemptStock(strapi, items);
+  let order;
+
+  try {
+    order = await strapi.documents('api::order.order').create({
+      data: {
+        tracking_number: attempt.tracking_number,
+        checkout_attempt_id: attempt.attempt_id || attempt.documentId,
+        customer_name: attempt.customer_name,
+        customer_email: attempt.customer_email,
+        customer_phone: attempt.customer_phone,
+        delivery_type: attempt.delivery_type,
+        address: attempt.address,
+        subtotal: Number(Number(attempt.subtotal || 0).toFixed(2)),
+        shipping_cost: Number(Number(attempt.shipping_cost || 0).toFixed(2)),
+        total: Number(getAttemptTotal(attempt).toFixed(2)),
+        order_status: 'pending_shipping',
+        fulfillment_status: 'pending_shipping',
+        payment_status: 'paid',
+        internal_payment_status: 'paid',
+        wompi_payment_status: 'paid',
+        expires_at: attempt.expires_at || defaultExpiresAt(),
+        payment_reservation_expires_at: attempt.expires_at || defaultExpiresAt(),
+        stock_released: true,
+        stock_decremented: true,
+        branch: getRelationDocumentId(attempt.branch),
+        shipping_rate: getRelationDocumentId(attempt.shipping_rate),
+        wompi_payment_link_id: attempt.wompi_payment_link_id,
+        wompi_payment_link_url: attempt.wompi_payment_link_url,
+        wompi_payment_link_long_url: attempt.wompi_payment_link_long_url,
+        wompi_payment_link_qr_url: attempt.wompi_payment_link_qr_url,
+        ...paymentStatusData,
+      },
+      status: 'published',
+    });
+
+    for (const item of items) {
+      await strapi.documents('api::order-item.order-item').create({
+        data: {
+          product_name: item.product_name,
+          variant_label: item.variant_label,
+          unit_price: Number(Number(item.unit_price || 0).toFixed(2)),
+          quantity: Number(item.quantity || 0),
+          order: order.documentId,
+          product: item.product,
+          variant: item.variant,
+          branch_stock: item.branch_stock,
+        },
+        status: 'published',
+      });
+    }
+  } catch (error) {
+    await Promise.all(
+      decrementedStock.map((entry) =>
+        strapi.db.connection('branch_stocks').where({ id: entry.branchStockId }).increment('quantity', entry.quantity),
+      ),
+    );
+    throw error;
+  }
+
+  await (strapi.documents as any)('api::payment-attempt.payment-attempt').update({
+    documentId: attempt.documentId,
+    data: {
+      status: 'promoted',
+      wompi_payment_status: 'paid',
+      order: order.documentId,
+      promoted_at: new Date().toISOString(),
+      promotion_error: null,
+    } as any,
+    status: 'published',
+  });
+
+  try {
+    await strapi.service('api::order.order-email').sendNewOrderAdminEmailOnce(order.documentId);
+    await strapi.service('api::order.order-email').sendOrderStatusEmailOnce(order.documentId, 'pending_shipping');
+  } catch (emailError) {
+    strapi.log.warn(`Unable to send paid order notification email: ${emailError instanceof Error ? emailError.message : emailError}`);
+  }
+
+  return order;
+};
+
+const promoteApprovedAttemptToOrder = async (strapi: any, attempt: any, paymentStatusData: Record<string, unknown>) => {
+  if (attempt.status === 'promoted' && attempt.order?.documentId) {
+    return findOrderByDocumentId(strapi, attempt.order.documentId);
+  }
+
+  const claimed = await claimAttemptForPromotion(strapi, attempt);
+  if (!claimed) {
+    const refreshedAttempt = await findAttemptByDocumentId(strapi, attempt.documentId);
+    if (refreshedAttempt?.order?.documentId) return findOrderByDocumentId(strapi, refreshedAttempt.order.documentId);
+    return null;
+  }
+
+  try {
+    return await createOrderFromAttempt(strapi, attempt, paymentStatusData);
+  } catch (error) {
+    await (strapi.documents as any)('api::payment-attempt.payment-attempt').update({
+      documentId: attempt.documentId,
+      data: {
+        status: 'approved',
+        wompi_payment_status: 'paid',
+        promotion_error: error instanceof Error ? error.message : String(error),
+      } as any,
+      status: 'published',
+    });
+    throw error;
+  }
+};
+
+const buildPublicAttemptResponse = (attempt: any) => {
+  const subtotal = Number(attempt.subtotal || 0);
+  const shippingCost = Number(attempt.shipping_cost || 0);
+  const status = attempt.status === 'promoted' ? 'paid' : attempt.status === 'failed' || attempt.status === 'expired' ? 'failed' : 'pending';
+
+  return {
+    kind: 'payment_attempt',
+    is_payment_attempt: true,
+    tracking_number: attempt.tracking_number,
+    payment_status: attempt.wompi_payment_status || status,
+    internal_payment_status: status,
+    wompi_payment_status: attempt.wompi_payment_status || null,
+    wompi_transaction_id: attempt.wompi_transaction_id || null,
+    wompi_transaction_status: attempt.wompi_transaction_status || null,
+    wompi_transaction_message: attempt.wompi_transaction_message || null,
+    wompi_authorization_code: attempt.wompi_authorization_code || null,
+    wompi_payment_method: attempt.wompi_payment_method || null,
+    customer_name: attempt.customer_name,
+    customer_email: attempt.customer_email,
+    delivery_type: attempt.delivery_type,
+    address: attempt.address || null,
+    subtotal,
+    shipping_cost: shippingCost,
+    total: Number((subtotal + shippingCost).toFixed(2)),
+    public_access_expires_at: attempt.expires_at || new Date(getPublicOrderAccessExpiresAt(attempt)).toISOString(),
+    branch: attempt.branch ? { name: attempt.branch.name, address: attempt.branch.address } : null,
+    shipping_rate: attempt.shipping_rate ? { name: attempt.shipping_rate.name } : null,
+    items: (attempt.items_snapshot || []).map((item: any) => ({
+      product_name: item.product_name,
+      variant_label: item.variant_label || null,
+      unit_price: Number(item.unit_price || 0),
+      quantity: Number(item.quantity || 0),
+      image: null,
+      image_url: null,
+      imageUrl: null,
+      thumbnail: null,
+      images: [],
+    })),
+  };
+};
+
 export default factories.createCoreController('api::order.order', ({ strapi }) => ({
   async create(ctx) {
     const payload = ctx.request.body?.data || ctx.request.body || {};
     const checkoutAttemptId = getCheckoutAttemptId(ctx, payload);
 
     if (checkoutAttemptId) {
-      const existingOrder = await findOrderByCheckoutAttemptId(strapi, checkoutAttemptId);
-      if (existingOrder) {
-        return respondWithExistingCheckoutAttempt(ctx, strapi, existingOrder);
+      const existingAttempt = await findAttemptByCheckoutAttemptId(strapi, checkoutAttemptId);
+      if (existingAttempt) {
+        return respondWithExistingCheckoutAttempt(ctx, strapi, existingAttempt);
       }
     }
 
@@ -685,7 +931,8 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
     } catch (error) {
       return ctx.badRequest(error instanceof Error ? error.message : 'Invalid order items');
     }
-    const orderItems: any[] = [];
+
+    const itemsSnapshot: any[] = [];
     let subtotal = 0;
 
     for (const item of inputItems) {
@@ -713,24 +960,36 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
         return ctx.badRequest(`Invalid price for ${product.name}`);
       }
 
-      subtotal += unitPrice * Number(item.quantity);
-      orderItems.push({ stock, product, unitPrice, quantity: Number(item.quantity) });
+      const quantity = Number(item.quantity);
+      subtotal += unitPrice * quantity;
+      itemsSnapshot.push({
+        product_name: product.name,
+        variant_label: stock.variant?.label,
+        unit_price: Number(unitPrice.toFixed(2)),
+        quantity,
+        branch_stock: stock.documentId,
+        branch_stock_id: stock.id,
+        product: product.documentId,
+        variant: stock.variant?.documentId,
+        branch: stock.branch?.documentId,
+      });
     }
 
-    const branchDocumentId = getRelationDocumentId(payload.branch) || orderItems[0]?.stock?.branch?.documentId;
+    const branchDocumentId = getRelationDocumentId(payload.branch) || itemsSnapshot[0]?.branch;
     const shippingCost = Number(payload.shipping_cost || 0);
 
     if (!Number.isFinite(shippingCost) || shippingCost < 0) {
       return ctx.badRequest('Shipping cost must be a valid non-negative number');
     }
 
-    let order;
+    let attempt;
 
     try {
-      order = await strapi.documents('api::order.order').create({
+      attempt = await (strapi.documents as any)('api::payment-attempt.payment-attempt').create({
         data: {
+          attempt_id: checkoutAttemptId,
           tracking_number: generateTrackingNumber(),
-          checkout_attempt_id: checkoutAttemptId,
+          status: 'pending',
           customer_name: payload.customer_name,
           customer_email: payload.customer_email,
           customer_phone: payload.customer_phone,
@@ -739,85 +998,41 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
           subtotal: Number(subtotal.toFixed(2)),
           shipping_cost: Number(shippingCost.toFixed(2)),
           total: Number((subtotal + shippingCost).toFixed(2)),
-          order_status: 'pending_shipping',
-          fulfillment_status: 'pending_shipping',
-          payment_status: 'pending',
-          internal_payment_status: 'pending',
-          wompi_payment_status: 'pending',
           expires_at: payload.expires_at || defaultExpiresAt(),
-          payment_reservation_expires_at: payload.expires_at || defaultExpiresAt(),
-          stock_released: false,
           branch: branchDocumentId,
           shipping_rate: getRelationDocumentId(payload.shipping_rate),
+          items_snapshot: itemsSnapshot,
+          wompi_payment_status: 'pending',
         },
         status: 'published',
       });
     } catch (error) {
       if (checkoutAttemptId && isUniqueConstraintError(error)) {
-        const existingOrder = await findOrderByCheckoutAttemptId(strapi, checkoutAttemptId);
-        if (existingOrder) {
-          return respondWithExistingCheckoutAttempt(ctx, strapi, existingOrder);
+        const existingAttempt = await findAttemptByCheckoutAttemptId(strapi, checkoutAttemptId);
+        if (existingAttempt) {
+          return respondWithExistingCheckoutAttempt(ctx, strapi, existingAttempt);
         }
       }
 
       throw error;
     }
 
-    const stockReservations: StockReservation[] = [];
-
-    for (const item of orderItems) {
-      try {
-        await reserveStockAtomically(strapi, item.stock, item.quantity);
-        stockReservations.push({
-          branchStockId: item.stock.id,
-          documentId: item.stock.documentId,
-          quantity: item.quantity,
-        });
-      } catch (error) {
-        await releaseStockReservations(strapi, stockReservations);
-        await strapi.documents('api::order.order').update({
-          documentId: order.documentId,
-          data: { stock_released: true } as any,
-          status: 'published',
-        });
-        await markOrderPaymentFailed(strapi, { ...order, stock_released: true });
-        return ctx.badRequest(error instanceof Error ? error.message : 'Insufficient stock');
-      }
-
-      await strapi.documents('api::order-item.order-item').create({
-        data: {
-          product_name: item.product.name,
-          variant_label: item.stock.variant?.label,
-          unit_price: Number(item.unitPrice.toFixed(2)),
-          quantity: item.quantity,
-          order: order.documentId,
-          product: item.product.documentId,
-          variant: item.stock.variant?.documentId,
-          branch_stock: item.stock.documentId,
-        },
-        status: 'published',
-      });
-    }
-
-    const createdOrder = await strapi.documents('api::order.order').findOne({
-      documentId: order.documentId,
-      populate: publicOrderPopulate as any,
-    });
-
     try {
-      const wompiPayment = await attachWompiPaymentLink(strapi, createdOrder);
+      const wompiPayment = await attachWompiPaymentLink(strapi, attempt);
+      const createdAttempt = await (strapi.documents as any)('api::payment-attempt.payment-attempt').findOne({
+        documentId: attempt.documentId,
+        populate: { branch: true, shipping_rate: true },
+      });
       ctx.status = 201;
-      ctx.body = { data: { ...createdOrder, wompi_payment: wompiPayment } };
+      ctx.body = { data: { ...createdAttempt, payment_status: 'pending', is_payment_attempt: true, wompi_payment: wompiPayment } };
     } catch (error) {
-      await releaseStockReservations(strapi, stockReservations);
-      await strapi.documents('api::order.order').update({
-        documentId: order.documentId,
-        data: { stock_released: true } as any,
+      await (strapi.documents as any)('api::payment-attempt.payment-attempt').update({
+        documentId: attempt.documentId,
+        data: { status: 'failed', wompi_payment_status: 'failed', promotion_error: getWompiErrorMessage(error) } as any,
         status: 'published',
       });
-      await markOrderPaymentFailed(strapi, { ...order, stock_released: true });
       const message = getWompiErrorMessage(error);
-      strapi.log.error('Unable to create Wompi payment link for checkout order', error);
+      strapi.log.error('Unable to create Wompi payment link for checkout attempt', error);
       return ctx.internalServerError(`No se pudo crear el enlace de pago de Wompi para la orden: ${message}`);
     }
   },
@@ -861,31 +1076,41 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
 
     if (!commerceId || !transactionId) return ctx.badRequest('Missing Wompi transaction identifiers');
 
-    const order = await findOrderByCommerceId(strapi, commerceId);
-    if (!order) return ctx.notFound('Order not found for Wompi transaction');
+    const attempt = await findOrderByCommerceId(strapi, commerceId);
+    if (!attempt) return ctx.notFound('Payment attempt not found for Wompi transaction');
 
-    const expectedTotal = getOrderTotal(order);
+    const expectedTotal = getAttemptTotal(attempt);
     const receivedTotal = asNumber(payload.Monto || payload.monto);
     const paid = isApproved && Math.abs(expectedTotal - receivedTotal) < 0.01;
-
     const webhookPaymentStatus = paid ? 'paid' : 'failed';
-    const webhookStockUpdate = await finalizeStockForPaymentStatus(strapi, order, webhookPaymentStatus);
+    const paymentStatusData = {
+      payment_status: webhookPaymentStatus,
+      internal_payment_status: webhookPaymentStatus,
+      wompi_payment_status: webhookPaymentStatus,
+      wompi_transaction_id: String(transactionId),
+      wompi_transaction_status: getWompiResultLabel(payload.ResultadoTransaccion || payload.resultadoTransaccion),
+      wompi_transaction_message: payload.Mensaje || payload.mensaje || '',
+      wompi_authorization_code: payload.CodigoAutorizacion || payload.codigoAutorizacion || '',
+      wompi_payment_method: getWompiPaymentMethodLabel(payload.FormaPago || payload.formaPago || payload.FormaPagoUtilizada || payload.formaPagoUtilizada),
+    };
 
-    await strapi.documents('api::order.order').update({
-      documentId: order.documentId,
+    await (strapi.documents as any)('api::payment-attempt.payment-attempt').update({
+      documentId: attempt.documentId,
       data: {
-        payment_status: webhookPaymentStatus,
-        internal_payment_status: webhookPaymentStatus,
-        wompi_payment_status: webhookPaymentStatus,
-        wompi_transaction_id: String(transactionId),
-        wompi_transaction_status: getWompiResultLabel(payload.ResultadoTransaccion || payload.resultadoTransaccion),
-        wompi_transaction_message: payload.Mensaje || payload.mensaje || '',
-        wompi_authorization_code: payload.CodigoAutorizacion || payload.codigoAutorizacion || '',
-        wompi_payment_method: getWompiPaymentMethodLabel(payload.FormaPago || payload.formaPago || payload.FormaPagoUtilizada || payload.formaPagoUtilizada),
-        ...webhookStockUpdate,
-      },
+        status: paid ? 'approved' : 'failed',
+        ...paymentStatusData,
+        raw_wompi_webhook_payload: payload,
+      } as any,
       status: 'published',
     });
+
+    if (paid) {
+      try {
+        await promoteApprovedAttemptToOrder(strapi, { ...attempt, ...paymentStatusData, status: 'approved' }, paymentStatusData);
+      } catch (error) {
+        strapi.log.error('Unable to promote approved Wompi payment attempt to order', error);
+      }
+    }
 
     ctx.body = { received: true };
   },
@@ -906,40 +1131,63 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       return ctx.unauthorized('Invalid Wompi redirect signature');
     }
 
-    const order = await findOrderByCommerceId(strapi, String(query.identificadorEnlaceComercio || ''));
-    if (!order) return ctx.notFound('Order not found for Wompi redirect');
+    const attempt = await findOrderByCommerceId(strapi, String(query.identificadorEnlaceComercio || ''));
+    if (!attempt) return ctx.notFound('Payment attempt not found for Wompi redirect');
 
     const transactionId = String(query.idTransaccion || '');
     const transaction = await fetchWompiTransactionDetails(strapi, transactionId);
     const redirectPaymentStatus = getPaymentStatusFromWompiTransaction(transaction, getPaymentStatusFromWompiRedirect(query));
     const transactionDetails = normalizeWompiTransactionDetails(transaction || {});
+    const paymentStatusData = {
+      payment_status: redirectPaymentStatus,
+      internal_payment_status: redirectPaymentStatus,
+      wompi_payment_status: redirectPaymentStatus,
+      wompi_transaction_id: transactionDetails.wompi_transaction_id || transactionId,
+      wompi_transaction_status: transactionDetails.wompi_transaction_status,
+      wompi_transaction_message: transactionDetails.wompi_transaction_message,
+      wompi_authorization_code: transactionDetails.wompi_authorization_code,
+      wompi_payment_method: transactionDetails.wompi_payment_method,
+    };
 
-    const redirectStockUpdate = await finalizeStockForPaymentStatus(strapi, order, redirectPaymentStatus);
-
-    await strapi.documents('api::order.order').update({
-      documentId: order.documentId,
+    await (strapi.documents as any)('api::payment-attempt.payment-attempt').update({
+      documentId: attempt.documentId,
       data: {
-        payment_status: redirectPaymentStatus,
-        internal_payment_status: redirectPaymentStatus,
-        wompi_payment_status: redirectPaymentStatus,
-        wompi_transaction_id: transactionDetails.wompi_transaction_id || transactionId,
-        wompi_transaction_status: transactionDetails.wompi_transaction_status,
-        wompi_transaction_message: transactionDetails.wompi_transaction_message,
-        wompi_authorization_code: transactionDetails.wompi_authorization_code,
-        wompi_payment_method: transactionDetails.wompi_payment_method,
-        ...redirectStockUpdate,
-      },
+        status: redirectPaymentStatus === 'paid' ? 'approved' : redirectPaymentStatus === 'failed' ? 'failed' : 'pending',
+        ...paymentStatusData,
+        raw_wompi_redirect_payload: query,
+      } as any,
       status: 'published',
     });
 
-    const updatedOrder = { ...order, payment_status: redirectPaymentStatus, wompi_transaction_id: transactionDetails.wompi_transaction_id || transactionId };
-    const returnUrl = buildWompiReturnUrl(updatedOrder, query);
-    if (returnUrl) return ctx.redirect(returnUrl);
+    let order = null;
+    if (redirectPaymentStatus === 'paid') {
+      try {
+        order = await promoteApprovedAttemptToOrder(strapi, { ...attempt, ...paymentStatusData, status: 'approved' }, paymentStatusData);
+      } catch (error) {
+        strapi.log.error('Unable to promote approved Wompi redirect attempt to order', error);
+      }
+    } else if (attempt.status === 'promoted' && attempt.order?.documentId) {
+      order = await findOrderByDocumentId(strapi, attempt.order.documentId);
+    }
+
+    const redirectSubject = order || { ...attempt, payment_status: redirectPaymentStatus };
+    const returnUrl = buildWompiReturnUrl(redirectSubject, query);
+    if (returnUrl) {
+      try {
+        const url = new URL(returnUrl);
+        url.searchParams.set('attempt', attempt.documentId);
+        if (order?.documentId) url.searchParams.set('order', order.documentId);
+        return ctx.redirect(url.toString());
+      } catch {
+        return ctx.redirect(returnUrl);
+      }
+    }
 
     ctx.body = {
       data: {
-        order: order.documentId,
-        payment_status: order.payment_status,
+        order: order?.documentId || null,
+        attempt: attempt.documentId,
+        payment_status: redirectPaymentStatus,
         transaction_id: query.idTransaccion,
         approved: asBoolean(query.esAprobada),
       },
@@ -950,11 +1198,36 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
     const identifier = String(ctx.params.identifier || '').trim();
     if (!identifier) return ctx.badRequest('Order identifier is required');
 
-    const order =
+    let order =
       (await findOrderByDocumentId(strapi, identifier)) ||
       (await findOrderByTrackingNumber(strapi, identifier));
 
-    if (!order) return ctx.notFound('Order not found');
+    if (!order) {
+      const attempt =
+        (await findAttemptByDocumentId(strapi, identifier)) ||
+        (await findAttemptByTrackingNumber(strapi, identifier));
+
+      if (!attempt) return ctx.notFound('Order not found');
+      if (attempt.status === 'promoted' && attempt.order?.documentId) {
+        const promotedOrder = await findOrderByDocumentId(strapi, attempt.order.documentId);
+        if (promotedOrder) {
+          ctx.params.identifier = promotedOrder.documentId;
+          order = promotedOrder;
+        }
+      }
+
+      if (!order) {
+        const expiresAt = attempt.expires_at ? Date.parse(attempt.expires_at) : Number.NaN;
+        if (Number.isFinite(expiresAt) && Date.now() > expiresAt) {
+          ctx.status = 410;
+          ctx.body = { error: { message: 'This public checkout link has expired' }, data: buildPublicAttemptResponse({ ...attempt, status: 'expired' }) };
+          return;
+        }
+
+        ctx.body = { data: buildPublicAttemptResponse(attempt) };
+        return;
+      }
+    }
     if (isPublicOrderAccessExpired(order)) {
       ctx.status = 410;
       ctx.body = { error: { message: 'This public order link has expired' } };

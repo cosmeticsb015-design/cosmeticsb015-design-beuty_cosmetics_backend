@@ -1,0 +1,69 @@
+{
+  "kind": "collectionType",
+  "collectionName": "payment_attempts",
+  "info": {
+    "singularName": "payment-attempt",
+    "pluralName": "payment-attempts",
+    "displayName": "Payment Attempt"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "attempt_id": { "type": "string", "unique": true, "private": true },
+    "tracking_number": { "type": "string", "required": true, "unique": true },
+    "status": {
+      "type": "enumeration",
+      "default": "pending",
+      "enum": ["pending", "approved", "failed", "expired", "promoting", "promoted"]
+    },
+    "customer_name": { "type": "string", "required": true },
+    "customer_email": { "type": "email", "required": true },
+    "customer_phone": { "type": "string", "required": true },
+    "delivery_type": {
+      "type": "enumeration",
+      "required": true,
+      "enum": ["delivery", "pickup"]
+    },
+    "address": { "type": "string" },
+    "subtotal": { "type": "decimal", "required": true },
+    "shipping_cost": { "type": "decimal", "required": true },
+    "total": { "type": "decimal" },
+    "expires_at": { "type": "datetime", "required": true },
+    "branch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "shipping_rate": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::shipping-rate.shipping-rate"
+    },
+    "order": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::order.order",
+      "private": true
+    },
+    "items_snapshot": { "type": "json", "required": true },
+    "wompi_payment_status": {
+      "type": "enumeration",
+      "enum": ["pending", "paid", "failed", "refunded"]
+    },
+    "wompi_transaction_id": { "type": "string" },
+    "wompi_transaction_status": { "type": "string" },
+    "wompi_transaction_message": { "type": "text" },
+    "wompi_authorization_code": { "type": "string" },
+    "wompi_payment_method": { "type": "string" },
+    "wompi_payment_link_id": { "type": "integer" },
+    "wompi_payment_link_url": { "type": "string" },
+    "wompi_payment_link_long_url": { "type": "string" },
+    "wompi_payment_link_qr_url": { "type": "string" },
+    "raw_wompi_webhook_payload": { "type": "json", "private": true },
+    "raw_wompi_redirect_payload": { "type": "json", "private": true },
+    "promoted_at": { "type": "datetime", "private": true },
+    "promotion_error": { "type": "text", "private": true }
+  }
+}
