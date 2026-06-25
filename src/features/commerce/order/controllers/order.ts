@@ -1431,6 +1431,7 @@ export const reconcilePendingWompiAttempts = async (strapi: any) => {
     try {
       strapi.log.info(`[cron] Reconciliación Wompi: llamando a wompi.getPaymentLink(${attempt.wompi_payment_link_id})...`);
       const enlace: any = await wompi.getPaymentLink(attempt.wompi_payment_link_id);
+      strapi.log.info(`[cron] Reconciliación Wompi: respuesta CRUDA de Wompi para idEnlace=${attempt.wompi_payment_link_id}: ${JSON.stringify(enlace)}`);
       strapi.log.info(`[cron] Reconciliación Wompi: respuesta recibida de Wompi para intento ${attempt.documentId}.`);
       const transaccion = enlace?.transaccionCompra;
 
