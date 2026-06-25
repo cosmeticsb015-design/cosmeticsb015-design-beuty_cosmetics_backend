@@ -1131,16 +1131,36 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
     const bodyForHash = Buffer.isBuffer(rawBody) ? rawBody.toString('utf8') : String(rawBody || '');
 
     if (!providedHash || !bodyForHash || !safeCompare(hmacSha256(bodyForHash, secret), providedHash)) {
-      strapi.log.warn(`Invalid Wompi webhook signature from ${ctx.ip || ctx.request.ip || 'unknown'}`);
+      const computedHash = bodyForHash ? hmacSha256(bodyForHash, secret) : '(sin body)';
+      strapi.log.warn(
+        `Invalid Wompi webhook signature from ${ctx.ip || ctx.request.ip || 'unknown'}. ` +
+          `providedHash="${providedHash || '(vacío)'}" computedHash="${computedHash}" ` +
+          `bodyLength=${bodyForHash.length} bodyPreview="${bodyForHash.slice(0, 200)}"`,
+      );
       return ctx.unauthorized('Invalid Wompi webhook signature');
     }
 
     const payload = ctx.request.body || {};
-    const commerceId = payload.IdentificadorEnlaceComercio || payload.identificadorEnlaceComercio;
+    // El payload REAL de Wompi anida identificadorEnlaceComercio dentro de
+    // "EnlacePago" (ver https://docs.wompi.sv/webhook/definicion-webhook).
+    // Se mantienen los campos planos como fallback por si Wompi envía otro
+    // tipo de evento con estructura distinta.
+    const enlacePago = payload.EnlacePago || payload.enlacePago || {};
+    const commerceId =
+      enlacePago.IdentificadorEnlaceComercio ||
+      enlacePago.identificadorEnlaceComercio ||
+      payload.IdentificadorEnlaceComercio ||
+      payload.identificadorEnlaceComercio;
     const transactionId = payload.IdTransaccion || payload.idTransaccion;
     const isApproved = payload.ResultadoTransaccion === 'ExitosaAprobada' || payload.esAprobada === true;
 
-    if (!commerceId || !transactionId) return ctx.badRequest('Missing Wompi transaction identifiers');
+    if (!commerceId || !transactionId) {
+      strapi.log.error(
+        `Wompi webhook: faltan identificadores en el payload. Llaves recibidas en la raíz: ${Object.keys(payload).join(', ')}. ` +
+          `Llaves recibidas en EnlacePago: ${Object.keys(enlacePago).join(', ')}.`,
+      );
+      return ctx.badRequest('Missing Wompi transaction identifiers');
+    }
 
     const attempt = await findOrderByCommerceId(strapi, commerceId);
     if (!attempt) {
