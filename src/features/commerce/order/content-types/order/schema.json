@@ -163,6 +163,11 @@
       "type": "boolean",
       "default": false,
       "private": true
+    },
+    "stock_decremented": {
+      "type": "boolean",
+      "default": false,
+      "private": true
     }
   }
 }
