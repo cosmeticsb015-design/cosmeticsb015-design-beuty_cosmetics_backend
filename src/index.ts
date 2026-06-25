@@ -85,7 +85,16 @@ export default {
       try {
         // require() perezoso (no en el top-level del archivo) para evitar
         // cualquier problema de orden de carga con el controlador.
-        const orderController = require('./features/commerce/order/controllers/order');
+        // IMPORTANTE: requerir vía 'api/order/...' (la ruta que pasa por el
+        // symlink src/api/order -> ../features/commerce/order), NO vía
+        // 'features/commerce/order/...' directo. Confirmado en producción
+        // que el build de Strapi solo recompila de forma confiable el
+        // artefacto bajo dist/src/api/order/..., mientras que
+        // dist/src/features/commerce/order/... puede quedar desactualizado
+        // entre builds (mismo archivo fuente, pero dos rutas/symlinks
+        // distintos para el compilador). Requerir por la ruta equivocada
+        // hacía que el setInterval corriera código viejo en silencio.
+        const orderController = require('./api/order/controllers/order');
         const reconcilePendingWompiAttempts =
           orderController.reconcilePendingWompiAttempts || orderController.default?.reconcilePendingWompiAttempts;
 
