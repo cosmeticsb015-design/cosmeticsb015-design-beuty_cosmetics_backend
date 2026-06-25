@@ -1427,6 +1427,7 @@ export const reconcilePendingWompiAttempts = async (strapi: any) => {
       if (!transaccion || !transaccion.idTransaccion) {
         // El cliente todavía no ha pagado con este enlace; lo deja para la
         // próxima corrida (o para el cron de expiración si ya venció).
+        strapi.log.info(`[cron] Reconciliación Wompi: intento ${attempt.documentId} (tracking_number=${attempt.tracking_number}) aún sin transacción asociada en Wompi (idEnlace=${attempt.wompi_payment_link_id}).`);
         continue;
       }
 
