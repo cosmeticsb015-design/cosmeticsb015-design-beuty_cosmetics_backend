@@ -1417,11 +1417,21 @@ export const reconcilePendingWompiAttempts = async (strapi: any) => {
 
   strapi.log.info(`[cron] Reconciliación Wompi: ${pendingAttempts.length} intento(s) pendiente(s) por revisar.`);
 
-  const wompi = strapi.service('api::order.wompi');
+  let wompi: any;
+  try {
+    wompi = strapi.service('api::order.wompi');
+    strapi.log.info(`[cron] Reconciliación Wompi: servicio obtenido OK (typeof wompi=${typeof wompi}, typeof getPaymentLink=${typeof wompi?.getPaymentLink}).`);
+  } catch (serviceError) {
+    strapi.log.error('[cron] Reconciliación Wompi: ERROR obteniendo strapi.service(\'api::order.wompi\')', serviceError);
+    return;
+  }
 
   for (const attempt of pendingAttempts) {
+    strapi.log.info(`[cron] Reconciliación Wompi: entrando al loop para intento ${attempt.documentId} (idEnlace=${attempt.wompi_payment_link_id}).`);
     try {
+      strapi.log.info(`[cron] Reconciliación Wompi: llamando a wompi.getPaymentLink(${attempt.wompi_payment_link_id})...`);
       const enlace: any = await wompi.getPaymentLink(attempt.wompi_payment_link_id);
+      strapi.log.info(`[cron] Reconciliación Wompi: respuesta recibida de Wompi para intento ${attempt.documentId}.`);
       const transaccion = enlace?.transaccionCompra;
 
       if (!transaccion || !transaccion.idTransaccion) {
