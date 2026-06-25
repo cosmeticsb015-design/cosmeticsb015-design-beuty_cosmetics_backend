@@ -60,17 +60,16 @@ const reconcilePendingWompiPayments = async ({ strapi }: { strapi: any }) => {
   }
 };
 
+// NOTA: reconcilePendingWompiPayments YA NO corre aquí. Se confirmó que el
+// scheduler de cron de Strapi (node-schedule) no ejecuta correctamente esta
+// tarea en particular al dispararla (el "tick" se loguea bien, pero el
+// cuerpo de la función nunca progresa). Se movió a un setInterval simple en
+// src/index.ts (bootstrap), que sí funciona de forma confiable.
 export default {
   releaseExpiredPaymentReservations: {
     task: releaseExpiredPaymentReservations,
     options: {
       rule: '*/5 * * * *',
-    },
-  },
-  reconcilePendingWompiPayments: {
-    task: reconcilePendingWompiPayments,
-    options: {
-      rule: '* * * * *',
     },
   },
 };
