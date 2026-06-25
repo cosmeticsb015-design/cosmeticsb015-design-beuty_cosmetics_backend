@@ -1066,11 +1066,23 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       ctx.request.body?.checkoutAttemptId ||
       ctx.request.body?.tracking_number;
 
-    if (!identifier) return ctx.badRequest('Checkout attempt identifier is required');
+    if (!identifier) {
+      if (Array.isArray(ctx.request.body?.items) && ctx.request.body.items.length > 0) {
+        return (strapi.controller('api::order.order') as any).create(ctx);
+      }
+
+      return ctx.badRequest('Checkout attempt identifier is required');
+    }
 
     const checkoutSubject = await findCheckoutSubjectForPaymentLink(strapi, String(identifier));
 
-    if (!checkoutSubject) return ctx.notFound('Checkout attempt not found');
+    if (!checkoutSubject) {
+      if (Array.isArray(ctx.request.body?.items) && ctx.request.body.items.length > 0) {
+        return (strapi.controller('api::order.order') as any).create(ctx);
+      }
+
+      return ctx.notFound('Checkout attempt not found');
+    }
 
     const { kind, entity } = checkoutSubject;
 
