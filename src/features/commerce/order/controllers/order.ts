@@ -496,21 +496,30 @@ const buildWompiReturnUrl = (order: any, query: Record<string, unknown>) => {
 const findOrderByCommerceId = async (strapi: any, commerceId: string) => {
   const trackingNumber = commerceId.replace(/^(ORDER|ATTEMPT|CHECKOUT)-/, '');
 
+  // IMPORTANTE: api::payment-attempt.payment-attempt tiene draftAndPublish
+  // deshabilitado (ver schema.json). Pasar `status: 'published'` a
+  // findMany/findOne sobre un content-type sin draftAndPublish hace que
+  // Strapi devuelva 0 resultados aunque el registro exista, porque no hay
+  // un publishedAt "real" que filtrar. Por eso aquí NO se pasa `status`.
   const attempts = await (strapi.documents as any)('api::payment-attempt.payment-attempt').findMany({
     filters: { tracking_number: trackingNumber },
-    status: 'published',
     limit: 1,
     populate: { order: true },
   });
 
-  return attempts[0];
+  if (attempts[0]) return attempts[0];
+
+  // Fallback: si el intento ya fue promovido y por cualquier razón ya no
+  // calza por tracking_number (ej. datos inconsistentes), intenta ubicar
+  // directamente la Order ya creada con ese mismo tracking_number.
+  const promotedOrder = await findOrderByTrackingNumber(strapi, trackingNumber);
+  return promotedOrder ? { ...promotedOrder, status: 'promoted', order: promotedOrder } : undefined;
 };
 
 const findOrderByDocumentId = async (strapi: any, documentId: string) => {
   try {
     return await strapi.documents('api::order.order').findOne({
       documentId,
-      status: 'published',
       populate: publicOrderPopulate as any,
     });
   } catch {
@@ -521,7 +530,6 @@ const findOrderByDocumentId = async (strapi: any, documentId: string) => {
 const findOrderByTrackingNumber = async (strapi: any, trackingNumber: string) => {
   const orders = await strapi.documents('api::order.order').findMany({
     filters: { tracking_number: trackingNumber },
-    status: 'published',
     limit: 1,
     populate: publicOrderPopulate as any,
   });
@@ -532,7 +540,6 @@ const findOrderByTrackingNumber = async (strapi: any, trackingNumber: string) =>
 const findAttemptByCheckoutAttemptId = async (strapi: any, checkoutAttemptId: string) => {
   const attempts = await (strapi.documents as any)('api::payment-attempt.payment-attempt').findMany({
     filters: { attempt_id: checkoutAttemptId },
-    status: 'published',
     limit: 1,
     populate: { order: true },
   });
@@ -544,7 +551,6 @@ const findAttemptByDocumentId = async (strapi: any, documentId: string) => {
   try {
     return await (strapi.documents as any)('api::payment-attempt.payment-attempt').findOne({
       documentId,
-      status: 'published',
       populate: { order: true, branch: true, shipping_rate: true },
     });
   } catch {
@@ -555,7 +561,6 @@ const findAttemptByDocumentId = async (strapi: any, documentId: string) => {
 const findAttemptByTrackingNumber = async (strapi: any, trackingNumber: string) => {
   const attempts = await (strapi.documents as any)('api::payment-attempt.payment-attempt').findMany({
     filters: { tracking_number: trackingNumber },
-    status: 'published',
     limit: 1,
     populate: { order: true, branch: true, shipping_rate: true },
   });
@@ -746,7 +751,6 @@ const decrementAttemptStock = async (strapi: any, items: any[]) => {
 
       const stocks = await strapi.documents('api::branch-stock.branch-stock').findMany({
         filters: { documentId: branchStockDocumentId },
-        status: 'published',
         limit: 1,
       });
       const stock = stocks[0];
@@ -1139,7 +1143,12 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
     if (!commerceId || !transactionId) return ctx.badRequest('Missing Wompi transaction identifiers');
 
     const attempt = await findOrderByCommerceId(strapi, commerceId);
-    if (!attempt) return ctx.notFound('Payment attempt not found for Wompi transaction');
+    if (!attempt) {
+      strapi.log.error(
+        `Wompi webhook: no se encontró ningún payment-attempt ni order para identificadorEnlaceComercio="${commerceId}" (tracking_number derivado="${String(commerceId).replace(/^(ORDER|ATTEMPT|CHECKOUT)-/, '')}"). idTransaccion="${transactionId}"`,
+      );
+      return ctx.notFound('Payment attempt not found for Wompi transaction');
+    }
 
     const expectedTotal = getAttemptTotal(attempt);
     const receivedTotal = asNumber(payload.Monto || payload.monto);
@@ -1193,8 +1202,32 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       return ctx.unauthorized('Invalid Wompi redirect signature');
     }
 
-    const attempt = await findOrderByCommerceId(strapi, String(query.identificadorEnlaceComercio || ''));
-    if (!attempt) return ctx.notFound('Payment attempt not found for Wompi redirect');
+    const commerceIdFromQuery = String(query.identificadorEnlaceComercio || '');
+    const attempt = await findOrderByCommerceId(strapi, commerceIdFromQuery);
+
+    if (!attempt) {
+      strapi.log.error(
+        `Wompi redirect: no se encontró ningún payment-attempt ni order para identificadorEnlaceComercio="${commerceIdFromQuery}" (tracking_number derivado="${commerceIdFromQuery.replace(/^(ORDER|ATTEMPT|CHECKOUT)-/, '')}"). idTransaccion="${query.idTransaccion || ''}"`,
+      );
+
+      // En vez de dejar al cliente viendo un JSON crudo después de haber
+      // pagado, lo regresamos al storefront con un estado claro para que
+      // pueda contactar soporte con el número de seguimiento a la mano.
+      const fallbackReturnUrl = getConfiguredWompiReturnUrl();
+      if (fallbackReturnUrl) {
+        try {
+          const url = new URL(fallbackReturnUrl);
+          url.searchParams.set('tracking_number', commerceIdFromQuery.replace(/^(ORDER|ATTEMPT|CHECKOUT)-/, ''));
+          url.searchParams.set('payment_status', 'unknown');
+          url.searchParams.set('transaction_id', String(query.idTransaccion || ''));
+          return ctx.redirect(url.toString());
+        } catch {
+          // si la URL de retorno configurada es inválida, cae al notFound de abajo
+        }
+      }
+
+      return ctx.notFound('Checkout attempt not found for Wompi redirect');
+    }
 
     const transactionId = String(query.idTransaccion || '');
     const transaction = await fetchWompiTransactionDetails(strapi, transactionId);
