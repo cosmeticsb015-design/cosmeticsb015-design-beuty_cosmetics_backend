@@ -504,7 +504,7 @@ const findOrderByCommerceId = async (strapi: any, commerceId: string) => {
   const attempts = await (strapi.documents as any)('api::payment-attempt.payment-attempt').findMany({
     filters: { tracking_number: trackingNumber },
     limit: 1,
-    populate: { order: true },
+    populate: { order: true, branch: true, shipping_rate: true },
   });
 
   if (attempts[0]) return attempts[0];
@@ -1381,105 +1381,3 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
     };
   },
 }));
-
-// ---------------------------------------------------------------------------
-// Reconciliación activa de pagos pendientes con Wompi
-// ---------------------------------------------------------------------------
-// Por qué existe esto: el webhook de Wompi es "pasivo" (depende de que ellos
-// nos avisen) y el redirect depende de que el cliente vuelva al navegador y
-// presione "Finalizar". Si el cliente cierra la pestaña justo después de
-// pagar, ninguno de los dos dispara, y el payment-attempt se queda
-// "pending" para siempre aunque el cobro sí se haya hecho.
-//
-// Esta función consulta ACTIVAMENTE a Wompi (GET /EnlacePago/:id, ver
-// https://docs.wompi.sv/metodos-api/) por cada intento pendiente, y si
-// Wompi ya tiene una transacción aprobada asociada a ese enlace, lo promueve
-// a orden real exactamente igual que lo haría el webhook o el redirect.
-// Se ejecuta desde config/cron-tasks.ts cada minuto.
-export const reconcilePendingWompiAttempts = async (strapi: any) => {
-  const minAgeMs = 90_000; // dale tiempo al redirect/webhook normal antes de intervenir
-  const cutoff = new Date(Date.now() - minAgeMs).toISOString();
-
-  const pendingAttempts = await (strapi.documents as any)('api::payment-attempt.payment-attempt').findMany({
-    filters: {
-      status: 'pending',
-      wompi_payment_link_id: { $notNull: true },
-      createdAt: { $lt: cutoff },
-    },
-    limit: 50,
-    populate: { order: true, branch: true, shipping_rate: true },
-  });
-
-  if (!pendingAttempts.length) {
-    strapi.log.info(`[cron] Reconciliación Wompi: 0 intentos pendientes con más de ${minAgeMs / 1000}s de antigüedad y wompi_payment_link_id asignado.`);
-    return;
-  }
-
-  strapi.log.info(`[cron] Reconciliación Wompi: ${pendingAttempts.length} intento(s) pendiente(s) por revisar.`);
-
-  let wompi: any;
-  try {
-    wompi = strapi.service('api::order.wompi');
-    strapi.log.info(`[cron] Reconciliación Wompi: servicio obtenido OK (typeof wompi=${typeof wompi}, typeof getPaymentLink=${typeof wompi?.getPaymentLink}).`);
-  } catch (serviceError) {
-    strapi.log.error('[cron] Reconciliación Wompi: ERROR obteniendo strapi.service(\'api::order.wompi\')', serviceError);
-    return;
-  }
-
-  for (const attempt of pendingAttempts) {
-    strapi.log.info(`[cron] Reconciliación Wompi: entrando al loop para intento ${attempt.documentId} (idEnlace=${attempt.wompi_payment_link_id}).`);
-    try {
-      strapi.log.info(`[cron] Reconciliación Wompi: llamando a wompi.getPaymentLink(${attempt.wompi_payment_link_id})...`);
-      const enlace: any = await wompi.getPaymentLink(attempt.wompi_payment_link_id);
-      strapi.log.info(`[cron] Reconciliación Wompi: respuesta CRUDA de Wompi para idEnlace=${attempt.wompi_payment_link_id}: ${JSON.stringify(enlace)}`);
-      strapi.log.info(`[cron] Reconciliación Wompi: respuesta recibida de Wompi para intento ${attempt.documentId}.`);
-      const transaccion = enlace?.transaccionCompra;
-
-      if (!transaccion || !transaccion.idTransaccion) {
-        // El cliente todavía no ha pagado con este enlace; lo deja para la
-        // próxima corrida (o para el cron de expiración si ya venció).
-        strapi.log.info(`[cron] Reconciliación Wompi: intento ${attempt.documentId} (tracking_number=${attempt.tracking_number}) aún sin transacción asociada en Wompi (idEnlace=${attempt.wompi_payment_link_id}).`);
-        continue;
-      }
-
-      const expectedTotal = getAttemptTotal(attempt);
-      const receivedTotal = asNumber(transaccion.monto ?? transaccion.montoOriginal);
-      const isApproved = transaccion.esAprobada === true;
-      const paid = isApproved && Math.abs(expectedTotal - receivedTotal) < 0.01;
-
-      const paymentStatusData = {
-        payment_status: paid ? 'paid' : 'failed',
-        internal_payment_status: paid ? 'paid' : 'failed',
-        wompi_payment_status: paid ? 'paid' : 'failed',
-        wompi_transaction_id: String(transaccion.idTransaccion),
-        wompi_transaction_status: getWompiResultLabel(transaccion.resultadoTransaccion),
-        wompi_transaction_message: transaccion.mensaje || '',
-        wompi_authorization_code: transaccion.codigoAutorizacion || '',
-        wompi_payment_method: getWompiPaymentMethodLabel(transaccion.formaPago),
-      };
-
-      await (strapi.documents as any)('api::payment-attempt.payment-attempt').update({
-        documentId: attempt.documentId,
-        data: {
-          status: paid ? 'approved' : 'failed',
-          ...paymentStatusData,
-          raw_wompi_webhook_payload: { source: 'reconciliation_cron', enlace },
-        } as any,
-        status: 'published',
-      });
-
-      if (paid) {
-        try {
-          await promoteApprovedAttemptToOrder(strapi, { ...attempt, ...paymentStatusData, status: 'approved' }, paymentStatusData);
-          strapi.log.info(`Reconciliación Wompi: payment-attempt ${attempt.documentId} promovido a orden (tracking_number=${attempt.tracking_number}).`);
-        } catch (promoteError) {
-          strapi.log.error(`Reconciliación Wompi: no se pudo promover el payment-attempt ${attempt.documentId} a orden`, promoteError);
-        }
-      } else {
-        strapi.log.warn(`Reconciliación Wompi: payment-attempt ${attempt.documentId} marcado como fallido (idTransaccion=${transaccion.idTransaccion}).`);
-      }
-    } catch (error) {
-      strapi.log.error(`Reconciliación Wompi: error consultando el enlace de pago ${attempt.wompi_payment_link_id} del intento ${attempt.documentId}`, error);
-    }
-  }
-};

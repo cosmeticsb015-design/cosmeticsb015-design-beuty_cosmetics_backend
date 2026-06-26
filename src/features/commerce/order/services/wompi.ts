@@ -103,12 +103,4 @@ export default factories.createCoreService('api::order.order', ({ strapi }) => (
   async getTransaction(transactionId: string) {
     return this.request(`/TransaccionCompra/${encodeURIComponent(transactionId)}`);
   },
-
-  // "Obtener Enlace de Pago por Id" — permite consultar activamente si un
-  // enlace de pago ya tiene una transacción asociada (transaccionCompra) y
-  // si esta fue aprobada, sin depender de que el webhook llegue ni de que
-  // el cliente regrese al navegador. Ver https://docs.wompi.sv/metodos-api/
-  async getPaymentLink(idEnlace: string | number) {
-    return this.request(`/EnlacePago/${encodeURIComponent(String(idEnlace))}`);
-  },
 }));
