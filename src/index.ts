@@ -69,48 +69,5 @@ export default {
       },
     ]);
 
-    // ---------------------------------------------------------------------
-    // Red de seguridad de pagos Wompi: setInterval en vez de cron nativo
-    // ---------------------------------------------------------------------
-    // El cron nativo de Strapi (config/cron-tasks.ts, vía node-schedule) se
-    // confirmó que NO ejecuta correctamente esta tarea al ser disparada por
-    // el scheduler (el log de "tick" sale bien, pero el cuerpo de la función
-    // nunca progresa ni loguea nada después). Llamando la MISMA función
-    // directamente (sin pasar por node-schedule) funciona perfecto en
-    // segundos. Por eso aquí se usa un setInterval simple, que es un
-    // mecanismo mucho más directo y predecible para este caso puntual.
-    const RECONCILE_WOMPI_INTERVAL_MS = 60_000;
-
-    setInterval(() => {
-      try {
-        // require() perezoso (no en el top-level del archivo) para evitar
-        // cualquier problema de orden de carga con el controlador.
-        // IMPORTANTE: requerir vía 'api/order/...' (la ruta que pasa por el
-        // symlink src/api/order -> ../features/commerce/order), NO vía
-        // 'features/commerce/order/...' directo. Confirmado en producción
-        // que el build de Strapi solo recompila de forma confiable el
-        // artefacto bajo dist/src/api/order/..., mientras que
-        // dist/src/features/commerce/order/... puede quedar desactualizado
-        // entre builds (mismo archivo fuente, pero dos rutas/symlinks
-        // distintos para el compilador). Requerir por la ruta equivocada
-        // hacía que el setInterval corriera código viejo en silencio.
-        const orderController = require('./api/order/controllers/order');
-        const reconcilePendingWompiAttempts =
-          orderController.reconcilePendingWompiAttempts || orderController.default?.reconcilePendingWompiAttempts;
-
-        if (typeof reconcilePendingWompiAttempts !== 'function') {
-          strapi.log.error('[interval] No se encontró reconcilePendingWompiAttempts en el controlador de order. Revisa el export.');
-          return;
-        }
-
-        strapi.log.info('[interval] reconcilePendingWompiAttempts: tick');
-
-        reconcilePendingWompiAttempts(strapi).catch((error: unknown) => {
-          strapi.log.error('[interval] Error ejecutando reconcilePendingWompiAttempts', error);
-        });
-      } catch (error) {
-        strapi.log.error('[interval] Error cargando reconcilePendingWompiAttempts', error);
-      }
-    }, RECONCILE_WOMPI_INTERVAL_MS);
   },
 };
