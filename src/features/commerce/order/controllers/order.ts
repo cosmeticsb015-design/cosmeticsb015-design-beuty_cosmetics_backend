@@ -428,8 +428,34 @@ const buildWompiPaymentLinkPayload = (order: any) => {
   };
 };
 
+
+const WOMPI_RECONCILE_ONCE_DELAY_MS = Number(process.env.WOMPI_RECONCILE_ONCE_DELAY_MS || 90_000);
+const WOMPI_RECONCILE_TIMER_SET_KEY = '__beautyWompiReconcileAttemptTimers';
+
+const scheduleWompiReconciliationOnce = (strapi: any, attempt: any) => {
+  if (!attempt?.status || !attempt?.documentId || !attempt?.wompi_payment_link_id) return;
+  if (!Number.isFinite(WOMPI_RECONCILE_ONCE_DELAY_MS) || WOMPI_RECONCILE_ONCE_DELAY_MS < 0) return;
+
+  const runtime = globalThis as typeof globalThis & Record<string, Set<string>>;
+  runtime[WOMPI_RECONCILE_TIMER_SET_KEY] ||= new Set<string>();
+  const scheduledAttempts = runtime[WOMPI_RECONCILE_TIMER_SET_KEY];
+  const scheduleKey = String(attempt.documentId);
+
+  if (scheduledAttempts.has(scheduleKey)) return;
+  scheduledAttempts.add(scheduleKey);
+
+  setTimeout(() => {
+    strapi.log.info(`[reconcile-once] Reconciliación Wompi: revisando intento ${attempt.documentId} después de ${WOMPI_RECONCILE_ONCE_DELAY_MS / 1000}s.`);
+    reconcilePendingWompiAttempts(strapi, { attemptDocumentId: attempt.documentId, minAgeMs: 0 }).catch((error: unknown) => {
+      strapi.log.error(`[reconcile-once] Error reconciliando intento ${attempt.documentId}`, error);
+    });
+  }, WOMPI_RECONCILE_ONCE_DELAY_MS);
+};
+
 const attachWompiPaymentLink = async (strapi: any, order: any) => {
   if (order.wompi_payment_link_url || order.wompi_payment_link_long_url) {
+    scheduleWompiReconciliationOnce(strapi, order);
+
     return {
       payment_link_id: order.wompi_payment_link_id,
       payment_url: order.wompi_payment_link_url || order.wompi_payment_link_long_url,
@@ -440,16 +466,20 @@ const attachWompiPaymentLink = async (strapi: any, order: any) => {
   const wompi = strapi.service('api::order.wompi');
   const paymentLink = await wompi.createPaymentLink(buildWompiPaymentLinkPayload(order));
 
+  const updatedPaymentData = {
+    wompi_payment_link_id: paymentLink.idEnlace,
+    wompi_payment_link_url: paymentLink.urlEnlace,
+    wompi_payment_link_long_url: paymentLink.urlEnlaceLargo,
+    wompi_payment_link_qr_url: paymentLink.urlQrCodeEnlace,
+  };
+
   await (strapi.documents as any)(order.status ? 'api::payment-attempt.payment-attempt' : 'api::order.order').update({
     documentId: order.documentId,
-    data: ({
-      wompi_payment_link_id: paymentLink.idEnlace,
-      wompi_payment_link_url: paymentLink.urlEnlace,
-      wompi_payment_link_long_url: paymentLink.urlEnlaceLargo,
-      wompi_payment_link_qr_url: paymentLink.urlQrCodeEnlace,
-    } as any),
+    data: updatedPaymentData as any,
     status: 'published',
   });
+
+  scheduleWompiReconciliationOnce(strapi, { ...order, ...updatedPaymentData });
 
   return {
     payment_link_id: paymentLink.idEnlace,
@@ -1395,17 +1425,26 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
 // https://docs.wompi.sv/metodos-api/) por cada intento pendiente, y si
 // Wompi ya tiene una transacción aprobada asociada a ese enlace, lo promueve
 // a orden real exactamente igual que lo haría el webhook o el redirect.
-// Se ejecuta desde config/cron-tasks.ts cada minuto.
-export const reconcilePendingWompiAttempts = async (strapi: any) => {
-  const minAgeMs = 90_000; // dale tiempo al redirect/webhook normal antes de intervenir
+// Se agenda una sola vez por intento de pago desde attachWompiPaymentLink().
+export const reconcilePendingWompiAttempts = async (
+  strapi: any,
+  options: { attemptDocumentId?: string; minAgeMs?: number } = {},
+) => {
+  const minAgeMs = options.minAgeMs ?? 90_000; // dale tiempo al redirect/webhook normal antes de intervenir
   const cutoff = new Date(Date.now() - minAgeMs).toISOString();
 
+  const filters: Record<string, any> = {
+    status: 'pending',
+    wompi_payment_link_id: { $notNull: true },
+    createdAt: { $lt: cutoff },
+  };
+
+  if (options.attemptDocumentId) {
+    filters.documentId = options.attemptDocumentId;
+  }
+
   const pendingAttempts = await (strapi.documents as any)('api::payment-attempt.payment-attempt').findMany({
-    filters: {
-      status: 'pending',
-      wompi_payment_link_id: { $notNull: true },
-      createdAt: { $lt: cutoff },
-    },
+    filters,
     limit: 50,
     populate: { order: true, branch: true, shipping_rate: true },
   });
