@@ -504,7 +504,7 @@ const findOrderByCommerceId = async (strapi: any, commerceId: string) => {
   const attempts = await (strapi.documents as any)('api::payment-attempt.payment-attempt').findMany({
     filters: { tracking_number: trackingNumber },
     limit: 1,
-    populate: { order: true },
+    populate: { order: true, branch: true, shipping_rate: true },
   });
 
   if (attempts[0]) return attempts[0];
