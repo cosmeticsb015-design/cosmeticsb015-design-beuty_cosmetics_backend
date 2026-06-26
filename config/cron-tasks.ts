@@ -60,11 +60,10 @@ const reconcilePendingWompiPayments = async ({ strapi }: { strapi: any }) => {
   }
 };
 
-// NOTA: reconcilePendingWompiPayments YA NO corre aquí. Se confirmó que el
-// scheduler de cron de Strapi (node-schedule) no ejecuta correctamente esta
-// tarea en particular al dispararla (el "tick" se loguea bien, pero el
-// cuerpo de la función nunca progresa). Se movió a un setInterval simple en
-// src/index.ts (bootstrap), que sí funciona de forma confiable.
+// NOTA: reconcilePendingWompiPayments YA NO corre aquí. Se agenda una sola
+// revisión por intento de pago cuando se crea el enlace Wompi, desde
+// attachWompiPaymentLink() en el controlador de órdenes. Así se evita consultar
+// indefinidamente los mismos intentos pendientes.
 export default {
   releaseExpiredPaymentReservations: {
     task: releaseExpiredPaymentReservations,
