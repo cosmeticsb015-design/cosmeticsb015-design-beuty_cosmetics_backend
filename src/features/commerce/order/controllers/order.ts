@@ -429,7 +429,8 @@ const buildWompiPaymentLinkPayload = (order: any) => {
 };
 
 
-const WOMPI_RECONCILE_ONCE_DELAY_MS = Number(process.env.WOMPI_RECONCILE_ONCE_DELAY_MS || 90_000);
+// Revisión rápida para que el admin vea antes los pagos que no llegaron por webhook/redirect.
+const WOMPI_RECONCILE_ONCE_DELAY_MS = Number(process.env.WOMPI_RECONCILE_ONCE_DELAY_MS || 15_000);
 const WOMPI_RECONCILE_TIMER_SET_KEY = '__beautyWompiReconcileAttemptTimers';
 
 const scheduleWompiReconciliationOnce = (strapi: any, attempt: any) => {
@@ -953,11 +954,11 @@ const buildPublicAttemptResponse = (attempt: any) => {
       variant_label: item.variant_label || null,
       unit_price: Number(item.unit_price || 0),
       quantity: Number(item.quantity || 0),
-      image: null,
-      image_url: null,
-      imageUrl: null,
-      thumbnail: null,
-      images: [],
+      image: item.image || null,
+      image_url: item.image_url || item.imageUrl || item.thumbnail || item.image?.absolute_url || item.image?.url || null,
+      imageUrl: item.imageUrl || item.image_url || item.thumbnail || item.image?.absolute_url || item.image?.url || null,
+      thumbnail: item.thumbnail || item.image_url || item.imageUrl || item.image?.absolute_url || item.image?.url || null,
+      images: Array.isArray(item.images) ? item.images : item.image ? [item.image] : [],
     })),
   };
 };
@@ -991,7 +992,12 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
         status: 'published',
         populate: {
           branch: true,
-          variant: { populate: { product: true } },
+          variant: {
+            populate: {
+              images: { populate: { image: true } },
+              product: { populate: { images: { populate: { image: true } } } },
+            },
+          },
         },
       });
 
@@ -1011,6 +1017,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       }
 
       const quantity = Number(item.quantity);
+      const image = getPrimaryOrderItemImage({ product, variant: stock.variant });
       subtotal += unitPrice * quantity;
       itemsSnapshot.push({
         product_name: product.name,
@@ -1022,6 +1029,11 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
         product: product.documentId,
         variant: stock.variant?.documentId,
         branch: stock.branch?.documentId,
+        image,
+        image_url: image?.absolute_url || image?.url || null,
+        imageUrl: image?.absolute_url || image?.url || null,
+        thumbnail: image?.absolute_url || image?.url || null,
+        images: image ? [image] : [],
       });
     }
 
